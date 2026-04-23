@@ -63,7 +63,10 @@ html,body{background:#F2F2F7;font-family:-apple-system,'Helvetica Neue',sans-ser
 .samt{font-size:12px;color:#8E8E93;text-align:right;margin-top:2px}
 .sdets{display:none;border-top:1px solid #F2F2F7}
 .sdets.open{display:block}
-.btn-del{display:inline-block;margin:0 16px 12px;font-size:13px;color:#FF3B30;background:#FFF2F2;border:none;border-radius:8px;padding:6px 14px;cursor:pointer;font-family:inherit}
+.btn-del{display:inline-block;margin:0 0 12px 0;font-size:13px;color:#FF3B30;background:#FFF2F2;border:none;border-radius:8px;padding:6px 14px;cursor:pointer;font-family:inherit}
+.btn-jump{display:inline-block;margin:0 8px 12px 16px;font-size:13px;color:#007AFF;background:#EFF6FF;border:none;border-radius:8px;padding:6px 14px;cursor:pointer;font-family:inherit}
+.btn-jump2{display:inline-block;margin:0 0 12px 0;font-size:13px;color:#FF9500;background:#FFF8EC;border:none;border-radius:8px;padding:6px 14px;cursor:pointer;font-family:inherit}
+.no-price{color:#FF9500;font-size:12px}
 .mbadge{display:inline-block;font-size:10px;padding:2px 7px;border-radius:5px;margin-left:6px;font-weight:600;vertical-align:middle}
 .btw{background:#FFF0F0;color:#FF3B30}.bus{background:#EFF6FF;color:#007AFF}
 .tags{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
@@ -103,7 +106,7 @@ tr:last-child td{border-bottom:none}
 <div class="tabs">
   <button class="tab on" onclick="sw('calc',this)">計算機</button>
   <button class="tab" onclick="sw('port',this)">持股</button>
-  <button class="tab" onclick="sw('grid',this)">網格</button>
+  <button class="tab" onclick="sw('grid',this)">買賣價</button>
   <button class="tab" onclick="sw('set',this)">設定</button>
 </div>
 
@@ -214,35 +217,34 @@ tr:last-child td{border-bottom:none}
   <div id="slist"></div>
 </div>
 
-<!-- 網格 -->
+<!-- 買賣價 -->
 <div id="p-grid" class="page">
   <div class="group">
-    <div class="row"><label>基準價格</label><input id="g-p" type="number" placeholder="100" inputmode="decimal"><span class="u">元</span></div>
+    <div class="row"><label>基準價格</label><input id="g-p" type="number" placeholder="2000" inputmode="decimal"><span class="u">元</span></div>
+    <div class="row"><label>持有股數</label><input id="g-shares" type="number" placeholder="100" inputmode="numeric" value="100"><span class="u">股</span></div>
+    <div class="row"><label>券商</label><select id="g-broker"></select></div>
   </div>
-  <div class="slabel">跌幅觸發買入</div>
+  <div class="slabel">每格跌幅（買入觸發）</div>
   <div class="tags" id="tags-dn">
-    <button class="tag on" onclick="pickTag(this,'dn',3)">-3%</button>
-    <button class="tag" onclick="pickTag(this,'dn',5)">-5%</button>
-    <button class="tag" onclick="pickTag(this,'dn',7)">-7%</button>
-    <button class="tag" onclick="pickTag(this,'dn',10)">-10%</button>
+    <button class="tag on" onclick="pickTag(this,'dn',3)">3%</button>
+    <button class="tag" onclick="pickTag(this,'dn',5)">5%</button>
+    <button class="tag" onclick="pickTag(this,'dn',7)">7%</button>
+    <button class="tag" onclick="pickTag(this,'dn',10)">10%</button>
   </div>
   <div class="group">
-    <div class="row"><label>自訂跌幅</label><input id="g-dn" type="number" value="3" inputmode="decimal"><span class="u">%</span></div>
-    <div class="row"><label>每次買入倉位</label><input id="g-bp" type="number" placeholder="5" inputmode="decimal"><span class="u">%</span></div>
+    <div class="row"><label>自訂每格跌幅</label><input id="g-dn" type="number" value="3" inputmode="decimal"><span class="u">%</span></div>
   </div>
-  <div class="slabel">漲幅觸發賣出</div>
+  <div class="slabel">每格漲幅（賣出觸發）</div>
   <div class="tags" id="tags-up">
-    <button class="tag on" onclick="pickTag(this,'up',3)">+3%</button>
-    <button class="tag" onclick="pickTag(this,'up',5)">+5%</button>
-    <button class="tag" onclick="pickTag(this,'up',7)">+7%</button>
-    <button class="tag" onclick="pickTag(this,'up',10)">+10%</button>
+    <button class="tag on" onclick="pickTag(this,'up',3)">3%</button>
+    <button class="tag" onclick="pickTag(this,'up',5)">5%</button>
+    <button class="tag" onclick="pickTag(this,'up',7)">7%</button>
+    <button class="tag" onclick="pickTag(this,'up',10)">10%</button>
   </div>
   <div class="group">
-    <div class="row"><label>自訂漲幅</label><input id="g-up" type="number" value="3" inputmode="decimal"><span class="u">%</span></div>
-    <div class="row"><label>每次賣出倉位</label><input id="g-sp" type="number" placeholder="5" inputmode="decimal"><span class="u">%</span></div>
-    <div class="row"><label>總持倉</label><input id="g-cap" type="number" placeholder="10" inputmode="decimal"><span class="u">萬</span></div>
+    <div class="row"><label>自訂每格漲幅</label><input id="g-up" type="number" value="3" inputmode="decimal"><span class="u">%</span></div>
   </div>
-  <button class="btn green" onclick="doGrid()">產生網格</button>
+  <button class="btn green" onclick="doGrid()">計算買賣損益</button>
   <div id="res-grid" style="display:none"></div>
 </div>
 
@@ -591,25 +593,42 @@ function renderPort(){
     const b=brokers.find(x=>x.id===s.brokerId)||brokers[0];
     if(!b)return'';
     const rate=s.rate||32;
-    const r=calcFees(b,s.mkt,s.cost,s.price,s.shares,rate);
+    const hasPrice=s.price&&s.price>0;
+    const r=hasPrice?calcFees(b,s.mkt,s.cost,s.price,s.shares,rate):null;
     const cTWD=s.mkt==='US'?s.cost*s.shares*rate:s.cost*s.shares;
-    const vTWD=s.mkt==='US'?s.price*s.shares*rate:s.price*s.shares;
-    const nTWD=s.mkt==='US'?r.net*rate:r.net;
-    tc+=cTWD;tv+=vTWD;tp+=nTWD;
-    const cl=r.pct>=0?'pos':'neg';
+    const vTWD=hasPrice?(s.mkt==='US'?s.price*s.shares*rate:s.price*s.shares):0;
+    const nTWD=hasPrice?(s.mkt==='US'?r.net*rate:r.net):0;
+    if(hasPrice){tc+=cTWD;tv+=vTWD;tp+=nTWD;}
+    const cl=r?(r.pct>=0?'pos':'neg'):'neu';
     const badge=s.mkt==='US'?'<span class="mbadge bus">美股</span>':'<span class="mbadge btw">台股</span>';
+    const pctDisplay=r?`<div class="spct ${cl}">${fmtP(r.pct)}</div><div class="samt">${r.amtStr}</div>`
+      :`<div class="no-price">未填現價</div>`;
     return`<div class="sitem">
       <div class="shead" onclick="togDet(${i})">
-        <div><div class="sname">${s.code}${badge}</div><div class="smeta">${s.name?s.name+' · ':''}${s.shares}股 · 成本 ${s.cost}</div></div>
-        <div><div class="spct ${cl}">${fmtP(r.pct)}</div><div class="samt">${r.amtStr}</div></div>
+        <div>
+          <div class="sname">${s.code}${badge}</div>
+          <div class="smeta">${s.name?s.name+' · ':''}${s.shares}股 · 成本 ${s.cost}</div>
+        </div>
+        <div style="text-align:right">${pctDisplay}</div>
       </div>
       <div class="sdets" id="d${i}">
-        <div class="dr"><span class="lbl">現價</span><input type="number" inputmode="decimal" value="${s.price||''}" placeholder="點此填入" onchange="updatePrice(${i},this.value)" style="width:100px;text-align:right;font-size:14px;padding:3px 6px;border:1px solid #D1D1D6;border-radius:7px;background:#F9F9F9;color:#1C1C1E;font-family:inherit"></div>
+        <div class="dr">
+          <span class="lbl">現價</span>
+          <input type="number" inputmode="decimal" value="${s.price||''}" placeholder="點此填入現價"
+            onchange="updatePrice(${i},this.value)"
+            style="width:110px;text-align:right;font-size:14px;padding:4px 8px;border:1px solid #D1D1D6;border-radius:7px;background:#F9F9F9;color:#1C1C1E;font-family:inherit">
+        </div>
+        ${r?`
         <div class="dr"><span class="lbl">手續費＋稅</span><span class="val">${r.feeStr}</span></div>
-        <div class="dr"><span class="lbl">損益兩平</span><span class="val">${r.beStr}</span></div>
+        <div class="dr"><span class="lbl">損益兩平賣價</span><span class="val">${r.beStr}</span></div>
         ${s.mkt==='US'?`<div class="dr"><span class="lbl">台幣損益</span><span class="val ${cl}">${r.amtSub}</span></div>`:''}
+        `:''}
         <div class="dr"><span class="lbl">券商</span><span class="val">${b.name}</span></div>
-        <button class="btn-del" onclick="delS(event,${i})">刪除</button>
+        <div style="padding:8px 16px 4px;display:flex;gap:0;flex-wrap:wrap">
+          <button class="btn-jump" onclick="jumpToCalc(${i})">→ 計算機</button>
+          <button class="btn-jump2" onclick="jumpToGrid(${i})">→ 買賣價</button>
+          <button class="btn-del" onclick="delS(event,${i})">刪除</button>
+        </div>
       </div>
     </div>`;
   }).join('');
@@ -624,6 +643,51 @@ function renderPort(){
 function togDet(i){document.getElementById('d'+i).classList.toggle('open')}
 function delS(e,i){e.stopPropagation();stocks.splice(i,1);save();renderPort()}
 function updatePrice(i,v){const p=parseFloat(v);if(!isNaN(p)&&p>0){stocks[i].price=p;save();renderPort();}}
+
+function jumpToCalc(i){
+  const s=stocks[i];
+  const b=brokers.find(x=>x.id===s.brokerId)||brokers[0];
+  // 切換 tab
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('on'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));
+  document.getElementById('p-calc').classList.add('on');
+  document.querySelector('.tab[onclick*="calc"]').classList.add('on');
+  // 設定市場
+  setMkt(s.mkt);
+  // 填入資料
+  document.getElementById('c-code').value=s.code;
+  document.getElementById('c-name').value=s.name||'';
+  document.getElementById('c-cost').value=s.cost;
+  document.getElementById('c-price').value=s.price||'';
+  document.getElementById('c-shares').value=s.shares;
+  if(s.mkt==='US') document.getElementById('c-rate').value=s.rate||32;
+  // 選券商
+  const sel=document.getElementById('c-broker');
+  if(b) sel.value=b.id;
+  renderBrokerNote();
+  // 有現價直接算
+  if(s.price&&s.price>0) doPnl();
+  window.scrollTo(0,0);
+}
+
+function jumpToGrid(i){
+  const s=stocks[i];
+  const b=brokers.find(x=>x.id===s.brokerId)||brokers[0];
+  // 切換 tab
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('on'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));
+  document.getElementById('p-grid').classList.add('on');
+  document.querySelector('.tab[onclick*="grid"]').classList.add('on');
+  // 填入基準價（用現價，沒有就用成本價）
+  document.getElementById('g-p').value=s.price||s.cost;
+  document.getElementById('g-shares').value=s.shares;
+  // 選同一個券商（台股才有效）
+  if(b&&b.mkt==='TW'){
+    const sel=document.getElementById('g-broker');
+    sel.value=b.id;
+  }
+  window.scrollTo(0,0);
+}
 function addStock(){
   const code=document.getElementById('p-code').value.trim();
   const name=document.getElementById('p-name').value.trim();
@@ -650,17 +714,69 @@ function doGrid(){
   const base=+document.getElementById('g-p').value||100;
   const dn=+document.getElementById('g-dn').value||3;
   const up=+document.getElementById('g-up').value||3;
-  const bp=+document.getElementById('g-bp').value||5;
-  const sp=+document.getElementById('g-sp').value||5;
-  const cap=(+document.getElementById('g-cap').value||10)*10000;
-  const rows=[-3,-2,-1,0,1,2,3].map(lv=>{
-    const p=base*Math.pow(1+(lv>=0?up:-dn)/100,Math.abs(lv));
-    const act=lv<0?'買入':lv>0?'賣出':'基準';
-    const pct=lv<0?bp:lv>0?sp:0;
-    const cl=lv<0?'pos':lv>0?'neg':'neu';
-    return`<tr><td class="${cl}">${act}</td><td>${p.toFixed(1)}</td><td>${pct?pct+'%':'—'}</td><td>${pct?fmt(cap*pct/100)+'元':'—'}</td></tr>`;
+  const shares=+document.getElementById('g-shares').value||100;
+  const bId=document.getElementById('g-broker').value;
+  const b=brokers.find(x=>x.id===bId);
+
+  // 產生 -3 到 +3 共 7 個價位
+  const levels=[-3,-2,-1,0,1,2,3];
+
+  // 買入價位（跌N格）和賣出價位（漲M格）的對應損益卡片
+  // 核心：每個「買入格 vs 賣出格」的組合損益
+  const buyPrices = [1,2,3].map(n=>({n, price: base*Math.pow(1-dn/100,n)}));
+  const sellPrices= [1,2,3].map(n=>({n, price: base*Math.pow(1+up/100,n)}));
+
+  // 價位列表（7格）
+  const priceRows = levels.map(lv=>{
+    const p = lv<0
+      ? base*Math.pow(1-dn/100, Math.abs(lv))
+      : lv>0
+        ? base*Math.pow(1+up/100, lv)
+        : base;
+    const act = lv<0?'買入':lv>0?'賣出':'基準';
+    const cl  = lv<0?'pos':lv>0?'neg':'neu';
+    return `<tr><td class="${cl}">${act}</td><td style="font-weight:600">${p.toFixed(1)}</td><td style="color:#8E8E93;font-size:12px">${lv!==0?(lv<0?'-':'+')+(Math.abs(lv)*dn)+'%（累積）':'—'}</td></tr>`;
   }).join('');
-  document.getElementById('res-grid').innerHTML=`<div class="group" style="padding:4px 8px"><table><thead><tr><th>動作</th><th>價位</th><th>倉位%</th><th>投入金額</th></tr></thead><tbody>${rows}</tbody></table></div><p class="note">基準持倉 ${fmt(cap)} 元</p>`;
+
+  // 損益配對：買入每格 vs 賣出每格（3×3 = 9 種組合，用最常見的買1賣1、買1賣2...等對角線顯示）
+  // 顯示買入第1~3格，分別漲回基準再漲1~3格後的損益
+  let pairRows='';
+  for(let b_n=1;b_n<=3;b_n++){
+    const buyP = base*Math.pow(1-dn/100, b_n);
+    for(let s_n=1;s_n<=3;s_n++){
+      const sellP = base*Math.pow(1+up/100, s_n);
+      const grossPct = (sellP-buyP)/buyP*100;
+      let netAmt = (sellP-buyP)*shares;
+      let feeNote = '';
+      if(b){
+        const r = calcFees(b,'TW',buyP,sellP,shares,1);
+        netAmt = r.net;
+        feeNote = '（含手續費）';
+      }
+      const netPct = netAmt/(buyP*shares)*100;
+      const cl = netAmt>=0?'pos':'neg';
+      pairRows+=`<tr>
+        <td style="font-size:13px">跌${b_n}格買<br><span style="color:#34C759;font-weight:600">${buyP.toFixed(1)}</span></td>
+        <td style="font-size:13px">漲${s_n}格賣<br><span style="color:#FF3B30;font-weight:600">${sellP.toFixed(1)}</span></td>
+        <td class="${cl}" style="font-weight:700">${netPct>=0?'+':''}${netPct.toFixed(2)}%</td>
+        <td class="${cl}" style="font-size:13px">${netAmt>=0?'+':''}${fmt(netAmt)}元</td>
+      </tr>`;
+    }
+  }
+
+  document.getElementById('res-grid').innerHTML=`
+    <div class="slabel">價位一覽</div>
+    <div class="group" style="padding:4px 8px">
+      <table><thead><tr><th style="text-align:left">動作</th><th>價位</th><th>累積幅度</th></tr></thead>
+      <tbody>${priceRows}</tbody></table>
+    </div>
+    <div class="slabel">買賣配對損益${b?'（含'+b.name+'手續費）':''}</div>
+    <div class="group" style="padding:4px 8px">
+      <table><thead>
+        <tr><th style="text-align:left">買入</th><th style="text-align:left">賣出</th><th>報酬%</th><th>損益</th></tr>
+      </thead><tbody>${pairRows}</tbody></table>
+    </div>
+    <p class="note">基準 ${base} 元 · ${shares} 股 · 每格跌${dn}%買／漲${up}%賣</p>`;
   document.getElementById('res-grid').style.display='block';
 }
 
@@ -843,7 +959,7 @@ function fmtD(n){return(n>=0?'+':'')+fmt(n)}
 function fmtP(n){return(n>=0?'+':'')+n.toFixed(2)+'%'}
 
 // ── init ──
-fillSel('c-broker','TW');fillSel('p-broker','TW');
+fillSel('c-broker','TW');fillSel('p-broker','TW');fillSel('g-broker','TW');
 renderBrokerNote();renderPort();updateApiBox();
 // 把現有持股名稱補進快取
 stocks.forEach(s=>{ if(s.code && s.name) saveNameCache(s.code, s.name); });
