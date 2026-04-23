@@ -127,7 +127,7 @@ tr:last-child td{border-bottom:none}
         <div id="c-hint" class="sdrop" style="display:none"></div>
       </div>
     </div>
-    <div class="row"><label>股票名稱</label><span id="c-name" style="font-size:14px;color:#8E8E93;flex:1;text-align:right">—</span></div>
+    <div class="row"><label>股票名稱</label><input id="c-name" class="si" type="text" placeholder="自動帶入或手動填" style="text-align:right"></div>
     <div class="row">
       <label>成本價</label>
       <input id="c-cost" type="number" placeholder="950" inputmode="decimal">
@@ -204,9 +204,8 @@ tr:last-child td{border-bottom:none}
         <div id="p-hint" class="sdrop" style="display:none"></div>
       </div>
     </div>
-    <div class="row"><label>股票名稱</label><span id="p-name" style="font-size:14px;color:#8E8E93;flex:1;text-align:right">—</span></div>
+    <div class="row"><label>股票名稱</label><input id="p-name" class="si" type="text" placeholder="自動帶入或手動填" style="text-align:right"></div>
     <div class="row"><label>成本價</label><input id="p-cost" type="number" inputmode="decimal" placeholder="950"><span class="u" id="p-cu">元</span></div>
-    <div class="row"><label>現價</label><input id="p-price" type="number" inputmode="decimal" placeholder="輸入或自動帶入"><span class="u" id="p-pu">元</span></div>
     <div class="row"><label>持有股數</label><input id="p-shares" type="number" inputmode="numeric" placeholder="100" value="100"><span class="u">股</span></div>
     <div class="row" id="p-rate-row" style="display:none"><label>匯率 USD/TWD</label><input id="p-rate" type="number" inputmode="decimal" placeholder="32" value="32"><span class="u">元</span></div>
     <div class="row"><label>券商</label><select id="p-broker"></select></div>
@@ -264,6 +263,20 @@ tr:last-child td{border-bottom:none}
   </div>
   <button class="btn green sm" onclick="saveApiKey()">儲存 API Key</button>
   <div id="apikey-status" style="font-size:13px;color:#8E8E93;margin:-6px 4px 16px"></div>
+
+  <div class="slabel">資料備份</div>
+  <div class="group">
+    <div class="row" style="cursor:pointer" onclick="exportData()">
+      <label style="cursor:pointer">匯出資料</label>
+      <span style="font-size:13px;color:#007AFF">下載 JSON ↓</span>
+    </div>
+    <div class="row" style="cursor:pointer" onclick="document.getElementById('import-file').click()">
+      <label style="cursor:pointer">匯入資料</label>
+      <span style="font-size:13px;color:#007AFF">選擇檔案 ↑</span>
+    </div>
+  </div>
+  <input type="file" id="import-file" accept=".json" style="display:none" onchange="importData(event)">
+  <div id="import-status" style="font-size:13px;color:#8E8E93;margin:-8px 4px 14px;line-height:1.6"></div>
 
   <div class="slabel">券商管理</div>
   <div class="group" id="broker-list"></div>
@@ -351,7 +364,6 @@ function onPortMktChange(){
   const m=document.getElementById('p-mkt').value;
   const u=m==='US'?'USD':'元';
   document.getElementById('p-cu').textContent=u;
-  document.getElementById('p-pu').textContent=u;
   document.getElementById('p-rate-row').style.display=m==='US'?'':'none';
   fillSel('p-broker',m);
 }
@@ -407,12 +419,18 @@ function onInput(prefix){
   clearTimeout(hintTimer);
   const q=document.getElementById(prefix+'-code').value.trim();
   if(q.length<1){document.getElementById(prefix+'-hint').style.display='none';return}
+  const mkt=prefix==='c'?curMkt:document.getElementById('p-mkt').value;
+  // 先查本地快取
+  const cached=findNameCache(q);
+  if(cached.length){
+    showCacheHints(prefix, cached, q, mkt);
+    return;
+  }
   if(!apiKey){
     const h=document.getElementById(prefix+'-hint');
     h.innerHTML='<div class="hl">請先在「設定」填入 Finnhub API Key</div>';
     h.style.display='block';return;
   }
-  const mkt=prefix==='c'?curMkt:document.getElementById('p-mkt').value;
   hintTimer=setTimeout(()=>doSearch(prefix,q,mkt),450);
 }
 
@@ -440,7 +458,8 @@ async function doSearch(prefix,q,mkt){
 
 async function pickStock(prefix,sym,nm,disp){
   document.getElementById(prefix+'-code').value=disp||sym.replace('.TW','');
-  document.getElementById(prefix+'-name').textContent=nm||'—';
+  document.getElementById(prefix+'-name').value=nm||'';
+  if(sym && nm) saveNameCache(sym.replace('.TW',''), nm);
   document.getElementById(prefix+'-hint').style.display='none';
   // 自動抓現價
   const priceEl=document.getElementById(prefix+'-price');
@@ -559,7 +578,7 @@ function renderPort(){
         <div><div class="spct ${cl}">${fmtP(r.pct)}</div><div class="samt">${r.amtStr}</div></div>
       </div>
       <div class="sdets" id="d${i}">
-        <div class="dr"><span class="lbl">現價</span><span class="val">${s.price}</span></div>
+        <div class="dr"><span class="lbl">現價</span><input type="number" inputmode="decimal" value="${s.price||''}" placeholder="點此填入" onchange="updatePrice(${i},this.value)" style="width:100px;text-align:right;font-size:14px;padding:3px 6px;border:1px solid #D1D1D6;border-radius:7px;background:#F9F9F9;color:#1C1C1E;font-family:inherit"></div>
         <div class="dr"><span class="lbl">手續費＋稅</span><span class="val">${r.feeStr}</span></div>
         <div class="dr"><span class="lbl">損益兩平</span><span class="val">${r.beStr}</span></div>
         ${s.mkt==='US'?`<div class="dr"><span class="lbl">台幣損益</span><span class="val ${cl}">${r.amtSub}</span></div>`:''}
@@ -578,20 +597,21 @@ function renderPort(){
 }
 function togDet(i){document.getElementById('d'+i).classList.toggle('open')}
 function delS(e,i){e.stopPropagation();stocks.splice(i,1);save();renderPort()}
+function updatePrice(i,v){const p=parseFloat(v);if(!isNaN(p)&&p>0){stocks[i].price=p;save();renderPort();}}
 function addStock(){
   const code=document.getElementById('p-code').value.trim();
-  const name=document.getElementById('p-name').textContent;
+  const name=document.getElementById('p-name').value.trim();
   const cost=+document.getElementById('p-cost').value;
-  const price=+document.getElementById('p-price').value;
   const shares=+document.getElementById('p-shares').value||1;
   const mkt=document.getElementById('p-mkt').value;
   const rate=+document.getElementById('p-rate').value||32;
   const bId=document.getElementById('p-broker').value;
-  if(!code||!cost||!price){alert('請填入代碼、成本價與現價');return}
-  stocks.push({code,name:name==='—'?'':name,cost,price,shares,mkt,rate,brokerId:bId});
+  if(!code||!cost){alert('請填入代碼與成本價');return}
+  stocks.push({code,name,cost,price:0,shares,mkt,rate,brokerId:bId});
+  if(code && name) saveNameCache(code, name);
   save();renderPort();
-  ['p-code','p-cost','p-price','p-shares'].forEach(id=>document.getElementById(id).value='');
-  document.getElementById('p-name').textContent='—';
+  ['p-code','p-cost','p-shares'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('p-name').value='';
 }
 
 // ── grid ──
@@ -684,6 +704,113 @@ function closeModal(e){
   document.getElementById('bmodal').classList.remove('open');
 }
 
+
+// ── 本地名稱快取 ──
+function getNameCache(){
+  try{return JSON.parse(localStorage.getItem('stockNames')||'{}')}catch(e){return{}}
+}
+function saveNameCache(code, name){
+  if(!code||!name||name==='—') return;
+  const cache=getNameCache();
+  cache[code.toUpperCase()]=name;
+  localStorage.setItem('stockNames', JSON.stringify(cache));
+}
+function findNameCache(q){
+  const cache=getNameCache();
+  const q2=q.toUpperCase();
+  // 完全符合代碼 或 名稱包含搜尋字
+  return Object.entries(cache)
+    .filter(([code,name])=> code.startsWith(q2) || name.includes(q))
+    .slice(0,5);
+}
+function showCacheHints(prefix, results, q, mkt){
+  const hintEl=document.getElementById(prefix+'-hint');
+  hintEl.innerHTML=results.map(([code,name])=>
+    `<div class="hi" onmousedown="pickCached('${prefix}','${code}','${name.replace(/'/g,"\'")}','${mkt}')">
+      <div class="hc">${code} <span style="font-size:10px;background:#E8F0FF;color:#0056CC;padding:1px 6px;border-radius:4px;margin-left:4px">已儲存</span></div>
+      <div class="hn">${name}</div>
+    </div>`
+  ).join('');
+  hintEl.style.display='block';
+}
+async function pickCached(prefix, code, name, mkt){
+  document.getElementById(prefix+'-code').value=code;
+  document.getElementById(prefix+'-name').value=name;
+  document.getElementById(prefix+'-hint').style.display='none';
+  // 嘗試抓現價（有 API key 才做）
+  if(apiKey){
+    const sym=fhSymbol(code, mkt);
+    const priceEl=document.getElementById(prefix+'-price');
+    priceEl.placeholder='抓取中…';
+    try{
+      const p=await fhPrice(sym);
+      if(p&&p>0){priceEl.value=p;priceEl.placeholder='';priceEl.style.borderColor='#34C759';setTimeout(()=>priceEl.style.borderColor='',1800);}
+      else priceEl.placeholder='請手動輸入';
+    }catch(e){priceEl.placeholder='請手動輸入';}
+  }
+}
+
+
+// ── 匯出匯入 ──
+function exportData(){
+  const data = {
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    stocks: stocks,
+    brokers: brokers,
+    stockNames: getNameCache(),
+  };
+  const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const date = new Date().toISOString().slice(0,10);
+  a.href = url;
+  a.download = `股票損益_${date}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function importData(event){
+  const file = event.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e){
+    try{
+      const data = JSON.parse(e.target.result);
+      if(!data.version) throw new Error('格式不符');
+      let msg = [];
+      if(Array.isArray(data.stocks)){
+        stocks = data.stocks;
+        msg.push(`持股 ${stocks.length} 筆`);
+      }
+      if(Array.isArray(data.brokers)){
+        brokers = data.brokers;
+        msg.push(`券商 ${brokers.length} 筆`);
+      }
+      if(data.stockNames && typeof data.stockNames === 'object'){
+        const existing = getNameCache();
+        const merged = Object.assign(existing, data.stockNames);
+        localStorage.setItem('stockNames', JSON.stringify(merged));
+        msg.push(`股票名稱快取 ${Object.keys(merged).length} 筆`);
+      }
+      save();
+      renderPort();
+      renderBrokerList();
+      fillSel('c-broker', curMkt);
+      fillSel('p-broker', document.getElementById('p-mkt').value);
+      const status = document.getElementById('import-status');
+      status.textContent = '✓ 匯入成功：' + msg.join('、');
+      status.style.color = '#34C759';
+    } catch(err){
+      const status = document.getElementById('import-status');
+      status.textContent = '✗ 匯入失敗：' + err.message;
+      status.style.color = '#FF3B30';
+    }
+    event.target.value = '';
+  };
+  reader.readAsText(file);
+}
+
 // ── helpers ──
 function fmt(n){return Math.round(n).toLocaleString('zh-TW')}
 function fmtD(n){return(n>=0?'+':'')+fmt(n)}
@@ -692,6 +819,8 @@ function fmtP(n){return(n>=0?'+':'')+n.toFixed(2)+'%'}
 // ── init ──
 fillSel('c-broker','TW');fillSel('p-broker','TW');
 renderBrokerNote();renderPort();updateApiBox();
+// 把現有持股名稱補進快取
+stocks.forEach(s=>{ if(s.code && s.name) saveNameCache(s.code, s.name); });
 </script>
 </body>
 </html>
