@@ -230,27 +230,23 @@ tr:last-child td{border-bottom:none}
     <div class="row"><label>券商</label><select id="g-broker"></select></div>
   </div>
   <div class="slabel">跌多少 % 買入</div>
-  <div class="tags" id="tags-dn">
-    <button class="tag on" onclick="pickTag(this,'dn',3)">-3%</button>
-    <button class="tag" onclick="pickTag(this,'dn',5)">-5%</button>
-    <button class="tag" onclick="pickTag(this,'dn',7)">-7%</button>
-    <button class="tag" onclick="pickTag(this,'dn',10)">-10%</button>
-    <button class="tag" id="tag-dn-custom" onclick="toggleCustomTag('dn')">自訂</button>
-  </div>
-  <div class="group" id="dn-input-group">
+  <div class="tags" id="tags-dn"></div>
+  <div class="group">
     <div class="row"><label>跌幅（每格）</label><input id="g-dn" type="number" value="3" inputmode="decimal"><span class="u">%</span></div>
+    <div class="row" style="cursor:pointer" onclick="addCustomTag('dn')">
+      <label style="cursor:pointer;color:#007AFF">＋ 新增為常用選項</label>
+      <span style="font-size:12px;color:#8E8E93">長按標籤可刪除</span>
+    </div>
   </div>
 
   <div class="slabel">漲多少 % 賣出</div>
-  <div class="tags" id="tags-up">
-    <button class="tag on" onclick="pickTag(this,'up',3)">+3%</button>
-    <button class="tag" onclick="pickTag(this,'up',5)">+5%</button>
-    <button class="tag" onclick="pickTag(this,'up',7)">+7%</button>
-    <button class="tag" onclick="pickTag(this,'up',10)">+10%</button>
-    <button class="tag" id="tag-up-custom" onclick="toggleCustomTag('up')">自訂</button>
-  </div>
-  <div class="group" id="up-input-group">
+  <div class="tags" id="tags-up"></div>
+  <div class="group">
     <div class="row"><label>漲幅（每格）</label><input id="g-up" type="number" value="3" inputmode="decimal"><span class="u">%</span></div>
+    <div class="row" style="cursor:pointer" onclick="addCustomTag('up')">
+      <label style="cursor:pointer;color:#007AFF">＋ 新增為常用選項</label>
+      <span style="font-size:12px;color:#8E8E93">長按標籤可刪除</span>
+    </div>
   </div>
   <button class="btn green" onclick="doGrid()">計算買賣損益</button>
   <div id="res-grid" style="display:none"></div>
@@ -748,25 +744,80 @@ function addStock(){
 }
 
 // ── grid ──
-function pickTag(el,dir,val){
-  document.getElementById('tags-'+dir).querySelectorAll('.tag').forEach(t=>t.classList.remove('on'));
-  el.classList.add('on');
-  document.getElementById('g-'+dir).value=val;
+// ── 買賣價標籤管理 ──
+const DEFAULT_TAGS = {
+  dn: [3, 5, 7, 10],
+  up: [3, 5, 7, 10]
+};
+
+function getTagList(dir){
+  try{
+    const saved = JSON.parse(localStorage.getItem('grid_tags_'+dir)||'null');
+    return saved || DEFAULT_TAGS[dir];
+  }catch(e){ return DEFAULT_TAGS[dir]; }
 }
-function toggleCustomTag(dir){
-  const customBtn=document.getElementById('tag-'+dir+'-custom');
-  const input=document.getElementById('g-'+dir);
-  const tags=document.getElementById('tags-'+dir);
-  tags.querySelectorAll('.tag').forEach(t=>t.classList.remove('on'));
-  customBtn.classList.add('on');
-  input.focus();
-  input.select();
-  input.oninput=function(){
-    const v=parseFloat(this.value);
-    if(!isNaN(v)&&v>0){
-      customBtn.textContent='自訂 '+v+'%';
-    }
-  };
+function saveTagList(dir, list){
+  localStorage.setItem('grid_tags_'+dir, JSON.stringify(list));
+}
+
+function renderTags(dir){
+  const list = getTagList(dir);
+  const container = document.getElementById('tags-'+dir);
+  const curVal = +document.getElementById('g-'+dir).value;
+  container.innerHTML = list.map((v,i)=>{
+    const isOn = v===curVal;
+    const label = dir==='dn' ? '-'+v+'%' : '+'+v+'%';
+    return `<button class="tag${isOn?' on':''}"
+      onclick="pickTagVal('${dir}',${v})"
+      oncontextmenu="deleteTag(event,'${dir}',${i})"
+      ontouchstart="startLongPress(event,'${dir}',${i})"
+      ontouchend="cancelLongPress()"
+      ontouchmove="cancelLongPress()"
+      style="position:relative"
+    >${label}</button>`;
+  }).join('');
+}
+
+function pickTagVal(dir, val){
+  document.getElementById('g-'+dir).value = val;
+  renderTags(dir);
+}
+
+function pickTag(el,dir,val){
+  document.getElementById('g-'+dir).value=val;
+  renderTags(dir);
+}
+
+function addCustomTag(dir){
+  const val = parseFloat(document.getElementById('g-'+dir).value);
+  if(isNaN(val)||val<=0||val>100){ alert('請先在上方輸入有效的 % 數值（1–100）'); return; }
+  const list = getTagList(dir);
+  if(list.includes(val)){ alert('這個 % 已經在選項裡了'); return; }
+  list.push(val);
+  list.sort((a,b)=>a-b);
+  saveTagList(dir, list);
+  renderTags(dir);
+}
+
+let longPressTimer = null;
+function startLongPress(e, dir, idx){
+  longPressTimer = setTimeout(()=>deleteTag(e, dir, idx), 600);
+}
+function cancelLongPress(){ clearTimeout(longPressTimer); }
+
+function deleteTag(e, dir, idx){
+  e.preventDefault();
+  cancelLongPress();
+  const list = getTagList(dir);
+  const val = list[idx];
+  if(DEFAULT_TAGS[dir].includes(val)){
+    alert('預設選項（'+val+'%）無法刪除');
+    return;
+  }
+  if(!confirm('刪除「'+(dir==='dn'?'-':'+')+val+'%」這個選項？')) return;
+  list.splice(idx,1);
+  saveTagList(dir, list);
+  renderTags(dir);
 }
 function doGrid(){
   const base=+document.getElementById('g-p').value||100;
@@ -1021,7 +1072,7 @@ function fmtD(n){return(n>=0?'+':'')+fmt(n)}
 function fmtP(n){return(n>=0?'+':'')+n.toFixed(2)+'%'}
 
 // ── init ──
-fillSel('c-broker','TW');fillSel('p-broker','TW');fillSel('g-broker','TW');
+fillSel('c-broker','TW');fillSel('p-broker','TW');fillSel('g-broker','TW');renderTags('dn');renderTags('up');
 renderBrokerNote();renderPort();updateApiBox();
 // 把現有持股名稱補進快取
 stocks.forEach(s=>{ if(s.code && s.name) saveNameCache(s.code, s.name); });
