@@ -256,8 +256,12 @@ tr:last-child td{border-bottom:none}
   <div class="slabel">資料備份</div>
   <div class="group">
     <div class="row" style="cursor:pointer" onclick="exportData()">
-      <label style="cursor:pointer">匯出資料</label>
+      <label style="cursor:pointer">匯出備份</label>
       <span style="font-size:13px;color:#007AFF">下載 JSON ↓</span>
+    </div>
+    <div class="row" style="cursor:pointer" onclick="exportExcel()">
+      <label style="cursor:pointer">匯出 Excel</label>
+      <span style="font-size:13px;color:#34C759">下載 XLSX ↓</span>
     </div>
     <div class="row" style="cursor:pointer" onclick="document.getElementById('import-file').click()">
       <label style="cursor:pointer">匯入資料</label>
@@ -1405,6 +1409,59 @@ async function pickCached(prefix, code, name, mkt){
 
 
 // ── 匯出匯入 ──
+function exportExcel(){
+  const date = new Date().toISOString().slice(0,10);
+
+  // ── Sheet 1：持股概覽 ──
+  const overviewHeader = ['股票代碼','股票名稱','市場','現價','持有股數','加權均價','未實現損益(元)','未實現損益(%)','損益兩平賣價','券商'];
+  const overviewRows = stocks.map(s=>{
+    const b = brokers.find(x=>x.id===s.brokerId)||{name:'—',mkt:'TW',buyPct:0.1425,sellPct:0.1425,tax:0.3,minFee:20};
+    const avgCost = stockAvgCost(s);
+    const held = stockHeldShares(s);
+    const hasPrice = s.price&&s.price>0;
+    let pnlAmt='—', pnlPct='—', be='—';
+    if(hasPrice&&held>0){
+      const r=calcFees(b,s.mkt,avgCost,s.price,held,s.rate||32);
+      pnlAmt=r.net.toFixed(0);
+      pnlPct=r.pct.toFixed(2)+'%';
+      be=r.be;
+    }
+    return [s.code, s.name||'', s.mkt==='TW'?'台股':'美股', s.price||'', held, avgCost.toFixed(2), pnlAmt, pnlPct, typeof be==='number'?be.toFixed(2):be, b.name];
+  });
+
+  // ── Sheet 2：交易紀錄 ──
+  const txnHeader = ['股票代碼','股票名稱','市場','買入/賣出','日期','價格','股數','備註'];
+  const txnRows = [];
+  stocks.forEach(s=>{
+    (s.txns||[]).forEach(t=>{
+      txnRows.push([s.code, s.name||'', s.mkt==='TW'?'台股':'美股', t.type==='buy'?'買入':'賣出', t.date||'', t.price, t.shares, t.note||'']);
+    });
+  });
+
+  // 產生多 Sheet XLSX（用 SheetJS）
+  const script = document.createElement('script');
+  script.src = 'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js';
+  script.onload = function(){
+    const wb = XLSX.utils.book_new();
+
+    // 持股概覽 sheet
+    const ws1 = XLSX.utils.aoa_to_sheet([overviewHeader, ...overviewRows]);
+    ws1['!cols'] = [10,14,6,8,8,10,14,12,12,12].map(w=>({wch:w}));
+    XLSX.utils.book_append_sheet(wb, ws1, '持股概覽');
+
+    // 交易紀錄 sheet
+    const ws2 = XLSX.utils.aoa_to_sheet([txnHeader, ...txnRows]);
+    ws2['!cols'] = [10,14,6,8,12,8,8,16].map(w=>({wch:w}));
+    XLSX.utils.book_append_sheet(wb, ws2, '交易紀錄');
+
+    XLSX.writeFile(wb, `股票損益_${date}.xlsx`);
+  };
+  script.onerror = function(){
+    alert('載入 Excel 函式庫失敗，請確認網路連線');
+  };
+  document.head.appendChild(script);
+}
+
 function exportData(){
   const data = {
     version: 1,
