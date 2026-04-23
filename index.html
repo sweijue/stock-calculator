@@ -222,11 +222,9 @@ tr:last-child td{border-bottom:none}
 
   <div class="slabel" style="margin-top:20px">攤平試算</div>
   <div class="group" id="avg-entries">
-    <div class="dr" style="padding:10px 16px;color:#8E8E93;font-size:13px">
-      點下方「加入加碼紀錄」新增每次買入
-    </div>
+    <div class="dr" style="padding:10px 16px;color:#8E8E93;font-size:13px">點下方按鈕新增加碼或減碼紀錄</div>
   </div>
-  <button class="btn ghost sm" onclick="addAvgEntry()">＋ 加入加碼紀錄</button>
+  <div style="display:flex;gap:8px;margin-bottom:14px"><button class="btn ghost sm" style="flex:1;margin-bottom:0" onclick="addAvgEntry('buy')">＋ 加碼</button><button class="btn sm" style="flex:1;margin-bottom:0;background:#fff;color:#FF3B30;border:1px solid #FF3B30" onclick="addAvgEntry('sell')">－ 減碼</button></div>
   <div id="avg-result" style="display:none">
     <div class="slabel">攤平後損益分析</div>
     <div class="group" id="avg-summary"></div>
@@ -835,9 +833,10 @@ function jumpToGrid(i){
   if(b&&b.mkt==='TW') document.getElementById('g-broker').value=b.id;
   avgEntries=[];
   const buys=(s.txns||[]).filter(t=>t.type==='buy');
-  buys.forEach(t=>{
-    const pct=avgCost>0?((avgCost-t.price)/avgCost*100):0;
-    avgEntries.push({pct:parseFloat(pct.toFixed(2)),shares:t.shares});
+  (s.txns||[]).forEach(t=>{
+    const isBuy=t.type==='buy';
+    const pct=avgCost>0?(isBuy?(avgCost-t.price)/avgCost*100:(t.price-avgCost)/avgCost*100):0;
+    avgEntries.push({type:t.type,pct:parseFloat(Math.abs(pct).toFixed(2)),shares:t.shares});
   });
   renderAvgEntries();
   window.scrollTo(0,0);
@@ -1094,10 +1093,8 @@ function doGrid(){
 // ── 攤平試算 ──
 let avgEntries = [];
 
-function addAvgEntry(){
-  const base = +document.getElementById('g-p').value||0;
-  const idx = avgEntries.length;
-  avgEntries.push({pct:0, shares:100});
+function addAvgEntry(type){
+  avgEntries.push({type:type||'buy', pct:0, shares:100});
   renderAvgEntries();
 }
 
@@ -1111,28 +1108,33 @@ function renderAvgEntries(){
   const el = document.getElementById('avg-entries');
   const base = +document.getElementById('g-p').value||0;
   if(!avgEntries.length){
-    el.innerHTML='<div class="dr" style="padding:10px 16px;color:#8E8E93;font-size:13px">點下方「加入加碼紀錄」新增每次買入</div>';
+    el.innerHTML='<div class="dr" style="padding:10px 16px;color:#8E8E93;font-size:13px">點下方按鈕新增加碼或減碼紀錄</div>';
     document.getElementById('avg-result').style.display='none';
     return;
   }
   el.innerHTML = avgEntries.map((e,i)=>{
-    const buyPrice = base>0 ? (base*(1-e.pct/100)).toFixed(1) : '—';
+    const isBuy = e.type!=='sell';
+    const actPrice = base>0 ? (base*(isBuy?1-e.pct/100:1+e.pct/100)).toFixed(1) : '—';
+    const typeLabel = isBuy ? '加碼' : '減碼';
+    const typeColor = isBuy ? '#34C759' : '#FF3B30';
+    const movLabel = isBuy ? '跌' : '漲';
     return `<div style="padding:10px 16px;border-bottom:1px solid #F2F2F7">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
-        <span style="font-size:13px;color:#6C6C70;flex:1">第 ${i+1} 次加碼</span>
+        <span style="font-size:12px;font-weight:700;color:${typeColor};background:${isBuy?'#ECFDF5':'#FFF2F2'};padding:2px 8px;border-radius:5px">${typeLabel}</span>
+        <span style="font-size:12px;color:#8E8E93;flex:1">第 ${i+1} 筆</span>
         <button onclick="removeAvgEntry(${i})" style="font-size:12px;color:#FF3B30;background:none;border:none;cursor:pointer;padding:2px 8px;font-family:inherit">刪除</button>
       </div>
       <div style="display:flex;gap:8px;align-items:center">
-        <span style="font-size:13px;color:#6C6C70;white-space:nowrap">跌</span>
+        <span style="font-size:13px;color:#6C6C70;white-space:nowrap">${movLabel}</span>
         <input type="number" value="${e.pct}" inputmode="decimal" placeholder="0"
           oninput="avgEntries[${i}].pct=parseFloat(this.value)||0;updateAvgPrice(${i});calcAvgResult()"
           style="width:60px;font-size:14px;padding:5px 8px;border:1px solid #D1D1D6;border-radius:8px;background:#F9F9F9;color:#1C1C1E;text-align:right">
-        <span style="font-size:13px;color:#6C6C70">%　買入價</span>
-        <span id="avg-price-${i}" style="font-size:14px;font-weight:600;color:#34C759;min-width:50px">${buyPrice}</span>
+        <span style="font-size:13px;color:#6C6C70">%　${isBuy?'買入':'賣出'}價</span>
+        <span id="avg-price-${i}" style="font-size:14px;font-weight:600;color:${typeColor};min-width:50px">${actPrice}</span>
         <span style="font-size:13px;color:#6C6C70">元</span>
       </div>
       <div style="display:flex;gap:8px;align-items:center;margin-top:8px">
-        <span style="font-size:13px;color:#6C6C70;white-space:nowrap">買入</span>
+        <span style="font-size:13px;color:#6C6C70;white-space:nowrap">${isBuy?'買入':'賣出'}</span>
         <input type="number" value="${e.shares}" inputmode="numeric" placeholder="100"
           oninput="avgEntries[${i}].shares=parseFloat(this.value)||0;calcAvgResult()"
           style="width:80px;font-size:14px;padding:5px 8px;border:1px solid #D1D1D6;border-radius:8px;background:#F9F9F9;color:#1C1C1E;text-align:right">
@@ -1145,8 +1147,9 @@ function renderAvgEntries(){
 
 function updateAvgPrice(i){
   const base = +document.getElementById('g-p').value||0;
-  const pct = avgEntries[i].pct||0;
-  const price = base*(1-pct/100);
+  const e = avgEntries[i];
+  const isBuy = e.type!=='sell';
+  const price = base*(isBuy?1-e.pct/100:1+e.pct/100);
   const el = document.getElementById('avg-price-'+i);
   if(el) el.textContent = base>0 ? price.toFixed(1) : '—';
 }
@@ -1162,28 +1165,41 @@ function calcAvgResult(){
     return;
   }
 
-  // 原始持倉 + 各次加碼
+  // 原始持倉 + 加碼 - 減碼
   let totalCost = base * baseShares;
   let totalShares = baseShares;
+  let realizedPnl = 0;
   avgEntries.forEach(e=>{
-    const buyP = base*(1-e.pct/100);
-    totalCost += buyP * e.shares;
-    totalShares += e.shares;
+    const isBuy = e.type!=='sell';
+    const curAvg = totalShares>0 ? totalCost/totalShares : base;
+    if(isBuy){
+      const buyP = base*(1-e.pct/100);
+      totalCost += buyP * e.shares;
+      totalShares += e.shares;
+    } else {
+      const sellP = base*(1+e.pct/100);
+      const sellShares = Math.min(e.shares, totalShares);
+      realizedPnl += (sellP - curAvg) * sellShares;
+      totalCost -= curAvg * sellShares;
+      totalShares -= sellShares;
+    }
   });
-  const avgCost = totalCost / totalShares;
+  const avgCost = totalShares>0 ? totalCost/totalShares : base;
   const saved = base - avgCost;
-  const savedPct = saved / base * 100;
+  const savedPct = base>0 ? saved/base*100 : 0;
 
   // 損益兩平
   const beFee = b&&b.mkt==='TW' ? (b.buyPct+b.sellPct+b.tax)/100 : 0;
   const be = avgCost * (1 + beFee);
 
+  const costCl = saved>=0?'pos':'neg';
   document.getElementById('avg-summary').innerHTML = `
     <div class="dr"><span class="lbl">原始成本價</span><span class="val">${base.toFixed(1)} 元</span></div>
-    <div class="dr"><span class="lbl">攤平後均價</span><span class="val" style="color:#34C759;font-weight:700">${avgCost.toFixed(1)} 元</span></div>
-    <div class="dr"><span class="lbl">每股降低成本</span><span class="val pos">${saved>=0?'-':''}${Math.abs(saved).toFixed(1)} 元（${Math.abs(savedPct).toFixed(2)}%）</span></div>
-    <div class="dr"><span class="lbl">總持股數</span><span class="val">${totalShares} 股</span></div>
+    <div class="dr"><span class="lbl">現均價</span><span class="val" style="color:#34C759;font-weight:700">${avgCost.toFixed(1)} 元</span></div>
+    <div class="dr"><span class="lbl">每股成本變化</span><span class="val ${costCl}">${saved>=0?'-':'+'}${Math.abs(saved).toFixed(1)} 元（${Math.abs(savedPct).toFixed(2)}%）</span></div>
+    <div class="dr"><span class="lbl">現持股數</span><span class="val">${totalShares} 股</span></div>
     <div class="dr"><span class="lbl">損益兩平賣價</span><span class="val">${be.toFixed(1)} 元</span></div>
+    ${realizedPnl!==0?`<div class="dr"><span class="lbl">減碼已實現損益</span><span class="val ${realizedPnl>=0?'pos':'neg'}">${realizedPnl>=0?'+':''}${fmt(realizedPnl)} 元</span></div>`:''}
   `;
 
   // 攤平後各賣出點位損益
