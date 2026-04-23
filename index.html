@@ -139,6 +139,7 @@ tr:last-child td{border-bottom:none}
       <label>現價</label>
       <input id="c-price" type="number" placeholder="現在的股票價格" inputmode="decimal">
       <span class="u" id="c-pu">元</span>
+      <button onclick="fetchCalcPrice()" style="flex-shrink:0;font-size:12px;color:#007AFF;background:none;border:1px solid #007AFF;border-radius:7px;padding:4px 8px;cursor:pointer;font-family:inherit;white-space:nowrap">抓取</button>
     </div>
     <div class="row">
       <label>持有股數</label>
@@ -369,6 +370,69 @@ tr:last-child td{border-bottom:none}
 
 <script>
 // ── storage ──
+const TW_NAMES = {
+  '2330':'台積電','2317':'鴻海','2454':'聯發科','2412':'中華電','2882':'國泰金',
+  '2886':'兆豐金','2303':'聯電','2881':'富邦金','2002':'中鋼','1301':'台塑',
+  '1303':'南亞','2308':'台達電','1326':'台化','2891':'中信金','2884':'玉山金',
+  '2885':'元大金','2892':'第一金','2880':'華南金','2887':'台新金','2883':'開發金',
+  '2890':'永豐金','3711':'日月光投控','2379':'瑞昱','2395':'研華','2357':'華碩',
+  '2382':'廣達','3034':'聯詠','4938':'和碩','2327':'國巨','2344':'華邦電',
+  '2353':'宏碁','2360':'致茂','2363':'矽統','2376':'技嘉','2377':'微星',
+  '2388':'威盛','3008':'大立光','6505':'台塑化','5871':'中租-KY','2207':'和泰車',
+  '2474':'可成','2492':'華新科','3045':'台灣大','4904':'遠傳','2105':'正新',
+  '1216':'統一','1402':'遠東新','2014':'中鴻','2049':'上銀','2059':'川湖',
+  '2103':'台橡','2106':'建大','2204':'中華','2227':'裕日車','2231':'為升',
+  '2239':'英利-KY','2247':'車王電','2323':'中環','2337':'旺宏','2338':'光罩',
+  '2347':'聯強','2352':'佳世達','2356':'英業達','2358':'廷鑫','2361':'益通',
+  '2371':'大同','2374':'佳能','2375':'智微','2383':'台光電','2385':'群光',
+  '2392':'正崴','2401':'凌陽','2404':'漢唐','2408':'南亞科','2409':'友達',
+  '2413':'環科','2420':'新日興','2425':'承啟','2426':'鼎元','2448':'晶電',
+  '2449':'京元電子','2450':'神腦','2451':'創見','2458':'義隆','2462':'寶成',
+  '2481':'強茂','2486':'一詮','2489':'瑞軒','2498':'宏達電','2504':'國產',
+  '2506':'太設','2511':'太子','2515':'中工','2520':'冠德','2524':'京城建',
+  '2527':'宏璟','2530':'華建','2534':'宏盛','2545':'皇翔','2546':'根基',
+  '2548':'華固','2601':'益航','2603':'長榮','2605':'新興','2606':'裕民',
+  '2609':'陽明','2610':'華航','2618':'長榮航','2637':'慧洋-KY','2641':'正德',
+  '2651':'中泰','2702':'王品','2723':'美食-KY','2727':'王座','2731':'雄獅',
+  '2736':'高鐵','2801':'彰銀','2809':'京城銀','2812':'台中銀','2816':'旺旺保',
+  '2820':'華票','2823':'中壽','2824':'台壽保','2832':'台產','2834':'臺企銀',
+  '2836':'聯邦銀','2838':'聯邦銀','2845':'遠東銀','2849':'安泰銀','2851':'中再保',
+  '2855':'統一證','2856':'元富證','2867':'三商壽','2868':'中國人壽','2869':'國票金',
+  '2903':'遠百','2904':'匯僑','2906':'高林股','2907':'神農','3006':'晶豪科',
+  '3009':'奇美材','3010':'華立','3011':'今皓','3013':'晟銘電','3014':'聯陽',
+  '3015':'平鎮','3016':'嘉晶','3017':'奇微','3018':'同開','3019':'亞泰',
+  '3020':'精技','3021':'東訊','3022':'威強電','3023':'信邦','3024':'憶聲',
+  '3025':'星通','3026':'禾伸堂','3027':'盛達','3028':'增你強','3029':'零壹',
+  '3030':'德律','3031':'佰鴻','3032':'偉訓','3033':'威健','3036':'精誠',
+  '3037':'欣興','3038':'全台','3041':'揚智','3042':'晶技','3043':'科風',
+  '3046':'建碁','3047':'訊舟','3048':'益登','3049':'和鑫','3050':'鈺德',
+  '3051':'力特','3052':'夆典','3053':'禎祥','3054':'立元趣','3055':'蘇州科達',
+  '4919':'新唐','4958':'臻鼎-KY','4961':'天鈺','4966':'譜瑞-KY','4967':'十銓',
+  '5007':'三星','5009':'榮化','5012':'太平洋電線電纜','5014':'中連貨','5015':'華電網',
+  '5016':'吉祥全','5017':'保瑞','5020':'詮鑫','5203':'訊連','5215':'科慕-TW',
+  '5225':'東和鋼鐵','5234':'達興材料','5243':'乙盛-KY','5269':'祥碩','5274':'信驊',
+  '5285':'界霖','5289':'宜鼎','5371':'中光電','5388':'中磊','5392':'應華',
+  '5434':'崇越','5452':'佶優','5457':'宣昂','5460':'同亨','5464':'霖宏',
+  '5469':'瀚宇博德','5471':'松翰','5474':'伍豐','5478':'聯鈞','5484':'慧友',
+  '5487':'通泰','5490':'同欣電','5491':'世新','5492':'力泰','5493':'三福化',
+  '5497':'世芯-KY','5508':'永信建','6104':'創惟','6108':'競國','6115':'鎰勝',
+  '6116':'彩晶','6117':'迎廣','6118':'建達','6120':'達運','6121':'新普',
+  '6122':'擎邦','6123':'建碁','6124':'業強','6125':'廣運','6126':'信音',
+  '6127':'九豪','6128':'上福','6129':'勤誠','6130':'樺漢','6131':'自強',
+  '6133':'金橋','6136':'富爾特','6139':'奇峰','6140':'訊達','6141':'捷泰',
+  '0050':'元大台灣50','0051':'元大中型100','0052':'富邦科技','0053':'元大電子',
+  '0054':'元大台商50','0055':'元大MSCI金融','0056':'元大高股息','0057':'富邦摩台',
+  '0058':'富邦發達','0059':'富邦金融','0060':'元大新台灣','0061':'元大寶滬深',
+  '00631L':'元大台灣50正2','00632R':'元大台灣50反1','00636':'國泰臺灣加權',
+  '00639':'富邦臺灣中小','00643':'群益台灣精選高息','00700':'富邦台灣ETF',
+  '00701':'國泰臺灣低波動30','00713':'元大台灣高息低波','00715L':'期街口布蘭特油正2',
+  '00720B':'元大投資級公司債','00722B':'群益15年IG科技債',
+  '00878':'國泰永續高股息','00881':'國泰台灣5G+','00882':'中信中國高股息',
+  '00885':'富邦越南','00891':'中信關鍵半導體','00892':'富邦台灣半導體',
+  '00893':'國泰智能電動車','00894':'中信小台灣精選','00896':'中信特選金融',
+  '00900':'富邦特選高股息30','00904':'新光臺灣半導體30',
+  '00905':'FT臺灣Smart','00907':'永豐優息存股',
+};
 const DEF_BROKERS=[
   // 台股
   {id:'b_yd_tw',   name:'元大 台股 整股',    mkt:'TW', buyPct:0.0855, sellPct:0.0855, tax:0.3, minFee:20},
@@ -432,6 +496,31 @@ function sw(id,el){
 }
 
 // ── market ──
+async function fetchCalcPrice(){
+  const code = document.getElementById('c-code')&&document.getElementById('c-code').value
+    ? document.getElementById('c-code').value.trim() : '';
+  if(!apiKey){alert('請先在「設定」填入 Finnhub API Key');return;}
+  const priceEl = document.getElementById('c-price');
+  priceEl.placeholder='抓取中…';
+  priceEl.value='';
+  try{
+    // 嘗試從名稱欄反推代碼
+    let sym = curMkt==='TW'?(code?code+'.TW':''):code;
+    if(!sym){alert('請先填入股票代碼');priceEl.placeholder='現在的股票價格';return;}
+    const p = await fhPrice(sym);
+    if(p&&p>0){
+      priceEl.value=p;
+      priceEl.placeholder='';
+      priceEl.style.borderColor='#34C759';
+      setTimeout(()=>priceEl.style.borderColor='',1800);
+    } else {
+      priceEl.placeholder='查無報價，請手動輸入';
+    }
+  }catch(e){
+    priceEl.placeholder='抓取失敗，請手動輸入';
+  }
+}
+
 function setMkt(m){
   curMkt=m;
   document.getElementById('mkt-tw').classList.toggle('on',m==='TW');
@@ -510,20 +599,58 @@ function onInput(prefix){
   clearTimeout(hintTimer);
   const q=document.getElementById(prefix+'-code').value.trim();
   if(q.length<1){document.getElementById(prefix+'-hint').style.display='none';return}
-  const mkt=prefix==='c'?curMkt:document.getElementById('p-mkt').value;
-  // 先顯示本地快取結果
-  const cached=findNameCache(q);
-  if(cached.length) showCacheHints(prefix, cached, q, mkt);
-  // 同時也呼叫 API（有 key 才做）
+  const mkt=prefix==='c'?curMkt:(document.getElementById('p-mkt')?document.getElementById('p-mkt').value:'TW');
+
+  // 台股：先查本地中文對照表
+  const twMatches = mkt==='TW' ? Object.entries(TW_NAMES).filter(([code,name])=>
+    code.startsWith(q) || name.includes(q)
+  ).slice(0,5) : [];
+
+  // 再查快取
+  const cached = findNameCache(q);
+  // 合併去重
+  const allLocal = [...twMatches, ...cached.filter(([c])=>!twMatches.find(([tc])=>tc===c))].slice(0,6);
+
+  if(allLocal.length){
+    const h=document.getElementById(prefix+'-hint');
+    h.innerHTML=allLocal.map(([code,name])=>
+      `<div class="hi" onmousedown="pickLocalStock('${prefix}','${code}','${name.replace(/'/g,"\'")}','${mkt}')">
+        <div class="hc">${code}</div>
+        <div class="hn">${name}</div>
+      </div>`
+    ).join('');
+    h.style.display='block';
+  }
+
   if(!apiKey){
-    if(!cached.length){
+    if(!allLocal.length){
       const h=document.getElementById(prefix+'-hint');
       h.innerHTML='<div class="hl">請先在「設定」填入 Finnhub API Key</div>';
       h.style.display='block';
     }
     return;
   }
-  hintTimer=setTimeout(()=>doSearch(prefix,q,mkt,cached.length>0),450);
+  hintTimer=setTimeout(()=>doSearch(prefix,q,mkt,allLocal.length>0),450);
+}
+
+async function pickLocalStock(prefix,code,name,mkt){
+  document.getElementById(prefix+'-code').value=code;
+  document.getElementById(prefix+'-name').value=name;
+  document.getElementById(prefix+'-hint').style.display='none';
+  if(code&&name) saveNameCache(code,name);
+  // 抓現價
+  if(apiKey){
+    const sym = mkt==='TW'?code+'.TW':code;
+    const priceEl=document.getElementById(prefix+'-price');
+    if(priceEl){
+      priceEl.placeholder='抓取中…';
+      try{
+        const p=await fhPrice(sym);
+        if(p&&p>0){priceEl.value=p;priceEl.placeholder='';priceEl.style.borderColor='#34C759';setTimeout(()=>priceEl.style.borderColor='',1800);}
+        else priceEl.placeholder='請手動輸入';
+      }catch(e){priceEl.placeholder='請手動輸入';}
+    }
+  }
 }
 
 async function doSearch(prefix,q,mkt,hasCached){
@@ -566,9 +693,12 @@ async function doSearch(prefix,q,mkt,hasCached){
 }
 
 async function pickStock(prefix,sym,nm,disp){
-  document.getElementById(prefix+'-code').value=disp||sym.replace('.TW','');
-  document.getElementById(prefix+'-name').value=nm||'';
-  if(sym && nm) saveNameCache(sym.replace('.TW',''), nm);
+  const code=disp||sym.replace('.TW','');
+  document.getElementById(prefix+'-code').value=code;
+  // 台股優先顯示中文名
+  const zhName=sym.endsWith('.TW')?(TW_NAMES[code]||nm||''):(nm||'');
+  document.getElementById(prefix+'-name').value=zhName;
+  if(code&&zhName) saveNameCache(code,zhName);
   document.getElementById(prefix+'-hint').style.display='none';
   // 自動抓現價
   const priceEl=document.getElementById(prefix+'-price');
@@ -957,6 +1087,7 @@ function onAddInput(){
   onInput('p');
 }
 
+
 function addStockAndTxn(){
   const code=document.getElementById('p-code').value.trim();
   const name=document.getElementById('p-name').value.trim();
@@ -1321,7 +1452,7 @@ function calcAvgResult(){
     <div class="dr"><span class="lbl">每股成本變化</span><span class="val ${costCl}">${saved>=0?'-':'+'}${Math.abs(saved).toFixed(1)} 元（${Math.abs(savedPct).toFixed(2)}%）</span></div>
     <div class="dr"><span class="lbl">現持股數</span><span class="val">${totalShares} 股</span></div>
     <div class="dr"><span class="lbl">回本最低賣價</span><span class="val">${be.toFixed(1)} 元</span></div>
-    ${realizedPnl!==0?`<div class="dr"><span class="lbl">減碼已實現損益（已賣出）</span><span class="val ${realizedPnl>=0?'pos':'neg'}">${realizedPnl>=0?'+':''}${fmt(realizedPnl)} 元</span></div>`:''}
+    ${realizedPnl!==0?`<div class="dr"><span class="lbl">減碼賣出獲利</span><span class="val ${realizedPnl>=0?'pos':'neg'}">${realizedPnl>=0?'+':''}${fmt(realizedPnl)} 元</span></div>`:''}
   `;
 
   // 攤平後各賣出點位損益
