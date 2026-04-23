@@ -1133,6 +1133,19 @@ function renderPort(){
     const txns=s.txns||[];
     const txnRows=txns.map((t,j)=>{
       const tb=t.brokerId?brokers.find(x=>x.id===t.brokerId):null;
+      // 計算這筆買入的個別損益
+      let txnPnlHtml='';
+      if(t.type==='buy' && s.price && s.price>0){
+        const txnB=tb||(brokers.find(x=>x.id===s.brokerId)||brokers[0]);
+        if(txnB){
+          const txnR=calcFees(txnB,s.mkt,t.price,s.price,t.shares,s.rate||32);
+          const txnCl=txnR.pct>=0?'pos':'neg';
+          txnPnlHtml=`<div style="text-align:right;min-width:90px">
+            <div style="font-size:15px;font-weight:700" class="${txnCl}">${txnR.pct>=0?'+':''}${txnR.pct.toFixed(2)}%</div>
+            <div style="font-size:13px;font-weight:500" class="${txnCl}">${txnR.amtStr}</div>
+          </div>`;
+        }
+      }
       return`<div style="padding:10px 16px;border-bottom:1px solid #F2F2F7">
         <div style="display:flex;align-items:center;gap:8px">
           <span style="color:${t.type==='buy'?'#34C759':'#FF3B30'};font-weight:700;font-size:16px;width:26px">${t.type==='buy'?'買':'賣'}</span>
@@ -1140,6 +1153,7 @@ function renderPort(){
             <div style="font-size:15px;font-weight:500">${t.price} 元 × ${t.shares}股</div>
             <div style="font-size:13px;color:#8E8E93;margin-top:2px">${t.date||'—'}${tb?' · '+tb.name:''}</div>
           </div>
+          ${txnPnlHtml}
           <button onclick="startEditTxn(${i},${j})" style="background:#EFF6FF;border:none;border-radius:8px;padding:6px 10px;cursor:pointer;font-size:16px;color:#007AFF">✎</button>
           <button onclick="delTxn(event,${i},${j})" style="background:#FFF2F2;border:none;border-radius:8px;padding:6px 10px;cursor:pointer;font-size:16px;color:#FF3B30">✕</button>
         </div>
