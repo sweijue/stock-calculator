@@ -115,6 +115,11 @@ tr:last-child td{border-bottom:none}
 
 <!-- 計算機 -->
 <div id="p-calc" class="page on">
+  <div style="background:#F0FFF4;border-radius:12px;padding:12px 16px;margin-bottom:14px;border:1px solid #BBF7D0">
+    <div style="font-size:13px;color:#15803D;line-height:1.7">
+      輸入你的<strong>買入成本</strong>和<strong>現在股價</strong>，立刻看帳面賺賠多少、手續費多少、還要漲多少才回本。
+    </div>
+  </div>
   <div id="apibox-calc" class="api-box" style="display:none">
     ⚠️ 尚未設定 Finnhub API Key，無法自動查詢股票與現價。<br>
     請到「設定」→「API Key」填入。<br>
@@ -127,12 +132,12 @@ tr:last-child td{border-bottom:none}
   <div class="group">
     <div class="row">
       <label>成本價</label>
-      <input id="c-cost" type="number" placeholder="950" inputmode="decimal">
+      <input id="c-cost" type="number" placeholder="你當初買入的價格" inputmode="decimal">
       <span class="u" id="c-cu">元</span>
     </div>
     <div class="row">
       <label>現價</label>
-      <input id="c-price" type="number" placeholder="輸入或自動帶入" inputmode="decimal">
+      <input id="c-price" type="number" placeholder="現在的股票價格" inputmode="decimal">
       <span class="u" id="c-pu">元</span>
     </div>
     <div class="row">
@@ -153,6 +158,7 @@ tr:last-child td{border-bottom:none}
   <div id="c-broker-note" style="font-size:12px;color:#8E8E93;margin:-8px 4px 12px;line-height:1.6"></div>
   <button class="btn green" onclick="doPnl()">計算損益</button>
   <div id="res-pnl" style="display:none">
+    <div id="r-hint" style="display:none;border-radius:10px;padding:11px 14px;font-size:13px;line-height:1.6;margin-bottom:12px"></div>
     <div class="g2">
       <div class="tile"><div class="lb">損益 %</div><div class="vl" id="r-pct">—</div></div>
       <div class="tile"><div class="lb">損益金額</div><div class="vl" id="r-amt">—</div><div class="sub" id="r-sub"></div></div>
@@ -172,9 +178,9 @@ tr:last-child td{border-bottom:none}
     </div>
     <button class="btn ghost sm" onclick="doAvg()">計算攤平</button>
     <div id="res-avg" style="display:none" class="group">
-      <div class="dr"><span class="lbl">攤平後均價</span><span class="val" id="av-r1">—</span></div>
+      <div class="dr"><span class="lbl">攤平後平均成本</span><span class="val" id="av-r1">—</span></div>
       <div class="dr"><span class="lbl">總持股數</span><span class="val" id="av-r2">—</span></div>
-      <div class="dr"><span class="lbl">攤平後兩平價</span><span class="val" id="av-r3">—</span></div>
+      <div class="dr"><span class="lbl">攤平後回本最低賣價</span><span class="val" id="av-r3">—</span></div>
     </div>
   </div>
 </div>
@@ -186,7 +192,7 @@ tr:last-child td{border-bottom:none}
     <div class="psr"><span class="lbl">總成本</span><span class="val" id="ps-c">—</span></div>
     <div class="psr"><span class="lbl">目前市值</span><span class="val" id="ps-v">—</span></div>
     <div class="divline"></div>
-    <div class="psr"><span class="lbl">未實現損益</span><span class="val" id="ps-p">—</span></div>
+    <div class="psr"><span class="lbl">帳面損益（未賣出）</span><span class="val" id="ps-p">—</span></div>
   </div>
   <div id="slist"></div>
   <div style="height:80px"></div>
@@ -195,6 +201,11 @@ tr:last-child td{border-bottom:none}
 
 <!-- 買賣價 -->
 <div id="p-grid" class="page">
+  <div style="background:#EFF6FF;border-radius:12px;padding:12px 16px;margin-bottom:14px;border:1px solid #BFDBFE">
+    <div style="font-size:13px;color:#1D4ED8;line-height:1.7">
+      輸入你的<strong>持有成本</strong>，設定每次跌多少要買、漲多少要賣，App 會同時顯示<strong>獲利點位</strong>和<strong>止損點位</strong>讓你對照。
+    </div>
+  </div>
   <div class="group">
     <div class="row"><label>持有成本價</label><input id="g-p" type="number" placeholder="2000" inputmode="decimal"><span class="u">元</span></div>
     <div class="row"><label>持有股數</label><input id="g-shares" type="number" placeholder="100" inputmode="numeric" value="100"><span class="u">股</span></div>
@@ -447,10 +458,18 @@ function fillSel(id,mkt){
 function renderBrokerNote(){
   const b=brokers.find(x=>x.id===document.getElementById('c-broker').value);
   const el=document.getElementById('c-broker-note');
-  if(!b){el.textContent='';return}
-  el.textContent=b.mkt==='TW'?`買 ${b.buyPct}% + 賣 ${b.sellPct}% + 稅 ${b.tax}%，最低 ${b.minFee} 元`
-    :b.type==='perShare'?`每股 $${b.perShare}，最低 $${b.minFee}`
-    :b.type==='pct'?`買 ${b.buyPct}% + 賣 ${b.sellPct}%`:'零手續費';
+  if(!b){el.innerHTML='';return}
+  let detail='';
+  if(b.mkt==='TW'){
+    detail=`買進手續費 ${b.buyPct}%、賣出手續費 ${b.sellPct}%、證交稅 ${b.tax}%，每筆最低 ${b.minFee} 元`;
+  } else if(b.type==='perShare'){
+    detail=`每股 $${b.perShare}，每筆最低 $${b.minFee}`;
+  } else if(b.type==='pct'){
+    detail=`買 ${b.buyPct}% + 賣 ${b.sellPct}%`;
+  } else {
+    detail='零手續費';
+  }
+  el.innerHTML=`<span style="color:#8E8E93">套用費率：</span>${detail}`;
 }
 
 // ── Finnhub API ──
@@ -660,6 +679,35 @@ function doPnl(){
   document.getElementById('r-stoploss').innerHTML = stopRows;
 
   document.getElementById('r-feerows').innerHTML=r.rows.map(x=>`<div class="dr"><span class="lbl">${x.lbl}</span><span class="val">${x.val}</span></div>`).join('');
+
+  // 情境提示
+  let hint='', hintColor='', hintBg='';
+  if(r.pct<=-20){
+    hint='虧損已超過 20%，若無把握反彈，建議認賠止損，避免越套越深。';
+    hintColor='#991B1B'; hintBg='#FEF2F2';
+  } else if(r.pct<=-10){
+    hint='虧損超過 10%，已達一般建議止損點。可考慮停損或分批攤平降低成本。';
+    hintColor='#C2410C'; hintBg='#FFF7ED';
+  } else if(r.pct<0){
+    hint='目前小幅虧損，注意觀察，可設定止損價格保護本金。';
+    hintColor='#B45309'; hintBg='#FFFBEB';
+  } else if(r.pct>=20){
+    hint='獲利已超過 20%，可考慮部分出場鎖定利潤，剩餘繼續持有。';
+    hintColor='#065F46'; hintBg='#ECFDF5';
+  } else if(r.pct>=10){
+    hint='獲利超過 10%，可開始考慮設定停利點，避免利潤回吐。';
+    hintColor='#065F46'; hintBg='#F0FFF4';
+  }
+  const hintEl = document.getElementById('r-hint');
+  if(hint){
+    hintEl.style.display='block';
+    hintEl.style.background=hintBg;
+    hintEl.style.color=hintColor;
+    hintEl.textContent=hint;
+  } else {
+    hintEl.style.display='none';
+  }
+
   document.getElementById('res-pnl').style.display='block';
 }
 
@@ -696,7 +744,7 @@ function stockHeldShares(s){
 
 function renderPort(){
   const el=document.getElementById('slist');
-  document.getElementById('fab').style.display='flex';if(!stocks.length){el.innerHTML='<div class="empty">尚無持股<br>點右下角 + 新增</div>';document.getElementById('ps-box').style.display='none';return;}
+  document.getElementById('fab').style.display='flex';if(!stocks.length){el.innerHTML='<div class="empty" style="padding:2rem 1rem"><div style="font-size:32px;margin-bottom:12px">📋</div><div style="font-weight:600;color:#1C1C1E;margin-bottom:8px">還沒有持股紀錄</div><div style="font-size:13px;color:#8E8E93;line-height:1.7">點右下角 <strong style="color:#34C759">＋</strong> 新增你的第一筆股票<br>App 會自動計算均價、帳面損益<br>和每個止損點的虧損金額</div></div>';document.getElementById('ps-box').style.display='none';return;}
   let tc=0,tv=0,tp=0;
   el.innerHTML=stocks.map((s,i)=>{
     const b=brokers.find(x=>x.id===s.brokerId)||brokers[0];
@@ -742,7 +790,7 @@ function renderPort(){
         </div>
         ${r?`
         <div class="dr"><span class="lbl">手續費＋稅</span><span class="val">${r.feeStr}</span></div>
-        <div class="dr"><span class="lbl">損益兩平賣價</span><span class="val">${r.beStr}</span></div>
+        <div class="dr"><span class="lbl">回本最低賣價</span><span class="val">${r.beStr}</span></div>
         ${s.mkt==='US'?`<div class="dr"><span class="lbl">台幣損益</span><span class="val ${cl}">${r.amtSub}</span></div>`:''}
         `:''}
         <div class="dr"><span class="lbl">券商</span><span class="val">${b.name}</span></div>
@@ -1147,9 +1195,16 @@ function doGrid(){
         </tbody>
       </table>
     </div>
-    <div style="background:#F9F9F9;border-radius:10px;padding:10px 14px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center">
-      <span style="font-size:13px;color:#6C6C70">風險報酬比（漲1格獲利 ÷ 跌1格虧損）</span>
-      <span style="font-size:16px;font-weight:700;color:${rrColor}">1 : ${rr}</span>
+    <div style="background:#F9F9F9;border-radius:10px;padding:12px 14px;margin-bottom:14px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+        <span style="font-size:13px;color:#6C6C70;font-weight:600">風險報酬比</span>
+        <span style="font-size:16px;font-weight:700;color:${rrColor}">1 : ${rr}</span>
+      </div>
+      <div style="font-size:12px;color:#8E8E93;line-height:1.6">
+        ${parseFloat(rr)>=1
+          ? '每承擔 1 元風險，預期獲利 '+rr+' 元。比值 ≥ 1 代表策略報酬大於風險，較有利。'
+          : '每承擔 1 元風險，預期獲利僅 '+rr+' 元。比值 < 1 代表風險大於報酬，建議調整策略。'}
+      </div>
     </div>
     <div class="slabel">低買高賣損益</div>
     <div class="group">${pairCards}</div>
@@ -1255,7 +1310,7 @@ function calcAvgResult(){
   const saved = base - avgCost;
   const savedPct = base>0 ? saved/base*100 : 0;
 
-  // 損益兩平
+  // 回本最低賣價
   const beFee = b&&b.mkt==='TW' ? (b.buyPct+b.sellPct+b.tax)/100 : 0;
   const be = avgCost * (1 + beFee);
 
@@ -1265,8 +1320,8 @@ function calcAvgResult(){
     <div class="dr"><span class="lbl">現均價</span><span class="val" style="color:#34C759;font-weight:700">${avgCost.toFixed(1)} 元</span></div>
     <div class="dr"><span class="lbl">每股成本變化</span><span class="val ${costCl}">${saved>=0?'-':'+'}${Math.abs(saved).toFixed(1)} 元（${Math.abs(savedPct).toFixed(2)}%）</span></div>
     <div class="dr"><span class="lbl">現持股數</span><span class="val">${totalShares} 股</span></div>
-    <div class="dr"><span class="lbl">損益兩平賣價</span><span class="val">${be.toFixed(1)} 元</span></div>
-    ${realizedPnl!==0?`<div class="dr"><span class="lbl">減碼已實現損益</span><span class="val ${realizedPnl>=0?'pos':'neg'}">${realizedPnl>=0?'+':''}${fmt(realizedPnl)} 元</span></div>`:''}
+    <div class="dr"><span class="lbl">回本最低賣價</span><span class="val">${be.toFixed(1)} 元</span></div>
+    ${realizedPnl!==0?`<div class="dr"><span class="lbl">減碼已實現損益（已賣出）</span><span class="val ${realizedPnl>=0?'pos':'neg'}">${realizedPnl>=0?'+':''}${fmt(realizedPnl)} 元</span></div>`:''}
   `;
 
   // 攤平後各賣出點位損益
@@ -1413,7 +1468,7 @@ function exportExcel(){
   const date = new Date().toISOString().slice(0,10);
 
   // ── Sheet 1：持股概覽 ──
-  const overviewHeader = ['股票代碼','股票名稱','市場','現價','持有股數','加權均價','未實現損益(元)','未實現損益(%)','損益兩平賣價','券商'];
+  const overviewHeader = ['股票代碼','股票名稱','市場','現價','持有股數','平均買入成本','帳面損益（未賣出）(元)','帳面損益（未賣出）(%)','回本最低賣價','券商'];
   const overviewRows = stocks.map(s=>{
     const b = brokers.find(x=>x.id===s.brokerId)||{name:'—',mkt:'TW',buyPct:0.1425,sellPct:0.1425,tax:0.3,minFee:20};
     const avgCost = stockAvgCost(s);
