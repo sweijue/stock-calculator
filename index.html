@@ -229,25 +229,28 @@ tr:last-child td{border-bottom:none}
     <div class="row"><label>持有股數</label><input id="g-shares" type="number" placeholder="100" inputmode="numeric" value="100"><span class="u">股</span></div>
     <div class="row"><label>券商</label><select id="g-broker"></select></div>
   </div>
-  <div class="slabel">每格跌幅（買入觸發）</div>
+  <div class="slabel">跌多少 % 買入</div>
   <div class="tags" id="tags-dn">
-    <button class="tag on" onclick="pickTag(this,'dn',3)">3%</button>
-    <button class="tag" onclick="pickTag(this,'dn',5)">5%</button>
-    <button class="tag" onclick="pickTag(this,'dn',7)">7%</button>
-    <button class="tag" onclick="pickTag(this,'dn',10)">10%</button>
+    <button class="tag on" onclick="pickTag(this,'dn',3)">-3%</button>
+    <button class="tag" onclick="pickTag(this,'dn',5)">-5%</button>
+    <button class="tag" onclick="pickTag(this,'dn',7)">-7%</button>
+    <button class="tag" onclick="pickTag(this,'dn',10)">-10%</button>
+    <button class="tag" id="tag-dn-custom" onclick="toggleCustomTag('dn')">自訂</button>
   </div>
-  <div class="group">
-    <div class="row"><label>自訂每格跌幅</label><input id="g-dn" type="number" value="3" inputmode="decimal"><span class="u">%</span></div>
+  <div class="group" id="dn-input-group">
+    <div class="row"><label>跌幅（每格）</label><input id="g-dn" type="number" value="3" inputmode="decimal"><span class="u">%</span></div>
   </div>
-  <div class="slabel">每格漲幅（賣出觸發）</div>
+
+  <div class="slabel">漲多少 % 賣出</div>
   <div class="tags" id="tags-up">
-    <button class="tag on" onclick="pickTag(this,'up',3)">3%</button>
-    <button class="tag" onclick="pickTag(this,'up',5)">5%</button>
-    <button class="tag" onclick="pickTag(this,'up',7)">7%</button>
-    <button class="tag" onclick="pickTag(this,'up',10)">10%</button>
+    <button class="tag on" onclick="pickTag(this,'up',3)">+3%</button>
+    <button class="tag" onclick="pickTag(this,'up',5)">+5%</button>
+    <button class="tag" onclick="pickTag(this,'up',7)">+7%</button>
+    <button class="tag" onclick="pickTag(this,'up',10)">+10%</button>
+    <button class="tag" id="tag-up-custom" onclick="toggleCustomTag('up')">自訂</button>
   </div>
-  <div class="group">
-    <div class="row"><label>自訂每格漲幅</label><input id="g-up" type="number" value="3" inputmode="decimal"><span class="u">%</span></div>
+  <div class="group" id="up-input-group">
+    <div class="row"><label>漲幅（每格）</label><input id="g-up" type="number" value="3" inputmode="decimal"><span class="u">%</span></div>
   </div>
   <button class="btn green" onclick="doGrid()">計算買賣損益</button>
   <div id="res-grid" style="display:none"></div>
@@ -750,6 +753,21 @@ function pickTag(el,dir,val){
   el.classList.add('on');
   document.getElementById('g-'+dir).value=val;
 }
+function toggleCustomTag(dir){
+  const customBtn=document.getElementById('tag-'+dir+'-custom');
+  const input=document.getElementById('g-'+dir);
+  const tags=document.getElementById('tags-'+dir);
+  tags.querySelectorAll('.tag').forEach(t=>t.classList.remove('on'));
+  customBtn.classList.add('on');
+  input.focus();
+  input.select();
+  input.oninput=function(){
+    const v=parseFloat(this.value);
+    if(!isNaN(v)&&v>0){
+      customBtn.textContent='自訂 '+v+'%';
+    }
+  };
+}
 function doGrid(){
   const base=+document.getElementById('g-p').value||100;
   const dn=+document.getElementById('g-dn').value||3;
@@ -758,65 +776,69 @@ function doGrid(){
   const bId=document.getElementById('g-broker').value;
   const b=brokers.find(x=>x.id===bId);
 
-  // 產生 -3 到 +3 共 7 個價位
+  // 價位一覽：3個買入點 + 基準 + 3個賣出點
   const levels=[-3,-2,-1,0,1,2,3];
-
-  // 買入價位（跌N格）和賣出價位（漲M格）的對應損益卡片
-  // 核心：每個「買入格 vs 賣出格」的組合損益
-  const buyPrices = [1,2,3].map(n=>({n, price: base*Math.pow(1-dn/100,n)}));
-  const sellPrices= [1,2,3].map(n=>({n, price: base*Math.pow(1+up/100,n)}));
-
-  // 價位列表（7格）
   const priceRows = levels.map(lv=>{
     const p = lv<0
       ? base*Math.pow(1-dn/100, Math.abs(lv))
-      : lv>0
-        ? base*Math.pow(1+up/100, lv)
-        : base;
+      : lv>0 ? base*Math.pow(1+up/100, lv) : base;
     const act = lv<0?'買入':lv>0?'賣出':'基準';
     const cl  = lv<0?'pos':lv>0?'neg':'neu';
-    return `<tr><td class="${cl}">${act}</td><td style="font-weight:600">${p.toFixed(1)}</td><td style="color:#8E8E93;font-size:12px">${lv!==0?(lv<0?'-':'+')+(Math.abs(lv)*dn)+'%（累積）':'—'}</td></tr>`;
+    const chg = lv===0?'—':(lv<0?'':'+')+((Math.pow(lv<0?1-dn/100:1+up/100,Math.abs(lv))-1)*100).toFixed(1)+'%';
+    return `<tr>
+      <td class="${cl}" style="font-weight:600">${act}</td>
+      <td style="font-weight:700;text-align:right">${p.toFixed(1)} 元</td>
+      <td style="text-align:right;font-size:12px;color:#8E8E93">${chg}</td>
+    </tr>`;
   }).join('');
 
-  // 損益配對：買入每格 vs 賣出每格（3×3 = 9 種組合，用最常見的買1賣1、買1賣2...等對角線顯示）
-  // 顯示買入第1~3格，分別漲回基準再漲1~3格後的損益
-  let pairRows='';
+  // 買賣配對：用清楚的「買入 XXXX → 賣出 XXXX」格式
+  let pairCards='';
   for(let b_n=1;b_n<=3;b_n++){
     const buyP = base*Math.pow(1-dn/100, b_n);
     for(let s_n=1;s_n<=3;s_n++){
       const sellP = base*Math.pow(1+up/100, s_n);
-      const grossPct = (sellP-buyP)/buyP*100;
       let netAmt = (sellP-buyP)*shares;
-      let feeNote = '';
+      let netPct = (sellP-buyP)/buyP*100;
       if(b){
         const r = calcFees(b,'TW',buyP,sellP,shares,1);
         netAmt = r.net;
-        feeNote = '（含手續費）';
+        netPct = r.net/(buyP*shares)*100;
       }
-      const netPct = netAmt/(buyP*shares)*100;
       const cl = netAmt>=0?'pos':'neg';
-      pairRows+=`<tr>
-        <td style="font-size:13px">跌${b_n}格買<br><span style="color:#34C759;font-weight:600">${buyP.toFixed(1)}</span></td>
-        <td style="font-size:13px">漲${s_n}格賣<br><span style="color:#FF3B30;font-weight:600">${sellP.toFixed(1)}</span></td>
-        <td class="${cl}" style="font-weight:700">${netPct>=0?'+':''}${netPct.toFixed(2)}%</td>
-        <td class="${cl}" style="font-size:13px">${netAmt>=0?'+':''}${fmt(netAmt)}元</td>
-      </tr>`;
+      const arrow = netAmt>=0?'↑':'↓';
+      pairCards+=`<div class="dr" style="flex-direction:column;align-items:stretch;padding:12px 16px;gap:4px">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <span style="font-size:13px;color:#6C6C70">
+            買入 <strong style="color:#34C759">${buyP.toFixed(1)}</strong>
+            　→　
+            賣出 <strong style="color:#FF3B30">${sellP.toFixed(1)}</strong>
+          </span>
+          <span class="${cl}" style="font-size:16px;font-weight:700">${netPct>=0?'+':''}${netPct.toFixed(2)}%</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <span style="font-size:11px;color:#8E8E93">${shares}股 · 含手續費</span>
+          <span class="${cl}" style="font-size:14px;font-weight:600">${netAmt>=0?'+':''}${fmt(netAmt)} 元</span>
+        </div>
+      </div>`;
     }
   }
 
   document.getElementById('res-grid').innerHTML=`
     <div class="slabel">價位一覽</div>
     <div class="group" style="padding:4px 8px">
-      <table><thead><tr><th style="text-align:left">動作</th><th>價位</th><th>累積幅度</th></tr></thead>
-      <tbody>${priceRows}</tbody></table>
+      <table style="width:100%;border-collapse:collapse;font-size:14px">
+        <thead><tr>
+          <th style="text-align:left;font-size:11px;color:#8E8E93;font-weight:400;padding:6px 8px;border-bottom:1px solid #F2F2F7">動作</th>
+          <th style="text-align:right;font-size:11px;color:#8E8E93;font-weight:400;padding:6px 8px;border-bottom:1px solid #F2F2F7">價位</th>
+          <th style="text-align:right;font-size:11px;color:#8E8E93;font-weight:400;padding:6px 8px;border-bottom:1px solid #F2F2F7">與基準差距</th>
+        </tr></thead>
+        <tbody>${priceRows}</tbody>
+      </table>
     </div>
-    <div class="slabel">買賣配對損益${b?'（含'+b.name+'手續費）':''}</div>
-    <div class="group" style="padding:4px 8px">
-      <table><thead>
-        <tr><th style="text-align:left">買入</th><th style="text-align:left">賣出</th><th>報酬%</th><th>損益</th></tr>
-      </thead><tbody>${pairRows}</tbody></table>
-    </div>
-    <p class="note">基準 ${base} 元 · ${shares} 股 · 每格跌${dn}%買／漲${up}%賣</p>`;
+    <div class="slabel">買賣損益${b?'（'+b.name+'）':''}</div>
+    <div class="group">${pairCards}</div>
+    <p class="note">基準 ${base} 元 · ${shares} 股 · 每格跌 ${dn}% 買入／漲 ${up}% 賣出</p>`;
   document.getElementById('res-grid').style.display='block';
 }
 
