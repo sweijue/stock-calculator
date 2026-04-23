@@ -420,39 +420,57 @@ function onInput(prefix){
   const q=document.getElementById(prefix+'-code').value.trim();
   if(q.length<1){document.getElementById(prefix+'-hint').style.display='none';return}
   const mkt=prefix==='c'?curMkt:document.getElementById('p-mkt').value;
-  // 先查本地快取
+  // 先顯示本地快取結果
   const cached=findNameCache(q);
-  if(cached.length){
-    showCacheHints(prefix, cached, q, mkt);
+  if(cached.length) showCacheHints(prefix, cached, q, mkt);
+  // 同時也呼叫 API（有 key 才做）
+  if(!apiKey){
+    if(!cached.length){
+      const h=document.getElementById(prefix+'-hint');
+      h.innerHTML='<div class="hl">請先在「設定」填入 Finnhub API Key</div>';
+      h.style.display='block';
+    }
     return;
   }
-  if(!apiKey){
-    const h=document.getElementById(prefix+'-hint');
-    h.innerHTML='<div class="hl">請先在「設定」填入 Finnhub API Key</div>';
-    h.style.display='block';return;
-  }
-  hintTimer=setTimeout(()=>doSearch(prefix,q,mkt),450);
+  hintTimer=setTimeout(()=>doSearch(prefix,q,mkt,cached.length>0),450);
 }
 
-async function doSearch(prefix,q,mkt){
+async function doSearch(prefix,q,mkt,hasCached){
   const hintEl=document.getElementById(prefix+'-hint');
-  hintEl.innerHTML='<div class="hl">搜尋中…</div>';
-  hintEl.style.display='block';
+  // 快取有結果時不顯示「搜尋中」，避免覆蓋快取
+  if(!hasCached){
+    hintEl.innerHTML='<div class="hl">搜尋中…</div>';
+    hintEl.style.display='block';
+  }
   try{
     const results=await fhSearch(q,mkt);
-    if(!results.length){hintEl.innerHTML='<div class="hl">找不到結果</div>';return}
-    hintEl.innerHTML=results.map(r=>{
+    if(!results.length){
+      if(!hasCached) hintEl.innerHTML='<div class="hl">找不到結果</div>';
+      return;
+    }
+    // 取得目前快取顯示的代碼，API 結果去重後追加
+    const cached=findNameCache(q);
+    const cachedCodes=new Set(cached.map(([c])=>c.toUpperCase()));
+    const apiItems=results.filter(r=>!cachedCodes.has(r.symbol.replace('.TW','').toUpperCase()));
+    const cacheHtml=cached.map(([code,name])=>
+      `<div class="hi" onmousedown="pickCached('${prefix}','${code}','${name.replace(/'/g,"\'")}','${mkt}')">
+        <div class="hc">${code} <span style="font-size:10px;background:#E8F0FF;color:#0056CC;padding:1px 6px;border-radius:4px;margin-left:4px">已儲存</span></div>
+        <div class="hn">${name}</div>
+      </div>`
+    ).join('');
+    const apiHtml=apiItems.map(r=>{
       const sym=r.symbol;
-      const nm=(r.description||'').replace(/'/g,"\\'");
-      // display symbol without .TW suffix for readability
+      const nm=(r.description||'').replace(/'/g,"\'");
       const disp=sym.replace('.TW','');
       return`<div class="hi" onmousedown="pickStock('${prefix}','${sym}','${nm}','${disp}')">
         <div class="hc">${disp}</div>
         <div class="hn">${r.description||''}</div>
       </div>`;
     }).join('');
+    hintEl.innerHTML=cacheHtml+apiHtml;
+    hintEl.style.display='block';
   }catch(e){
-    hintEl.innerHTML=`<div class="hl">查詢失敗：${e.message||'請檢查 API Key 或網路'}</div>`;
+    if(!hasCached) hintEl.innerHTML=`<div class="hl">查詢失敗：${e.message||'請檢查 API Key 或網路'}</div>`;
   }
 }
 
