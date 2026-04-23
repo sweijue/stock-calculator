@@ -9,97 +9,55 @@
 <title>股票損益計算</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-html,body{
-  background:#F2F2F7;
-  font-family:-apple-system,'Helvetica Neue',sans-serif;
-  color:#1C1C1E;
-  max-width:430px;
-  margin:0 auto;
-  color-scheme:light;
-}
+html,body{background:#F2F2F7;font-family:-apple-system,'Helvetica Neue',sans-serif;color:#1C1C1E;max-width:430px;margin:0 auto;color-scheme:light}
 .tabs{display:flex;background:#fff;border-bottom:1px solid #E5E5EA;position:sticky;top:0;z-index:20}
 .tab{flex:1;padding:13px 0;font-size:14px;text-align:center;cursor:pointer;color:#8E8E93;border:none;background:transparent;border-bottom:2px solid transparent}
 .tab.on{color:#007AFF;border-bottom:2px solid #007AFF;font-weight:600}
-.page{display:none;padding:16px 16px 80px}
-.page.on{display:block}
-
-/* groups */
+.page{display:none;padding:16px 16px 80px}.page.on{display:block}
 .group{background:#fff;border-radius:13px;overflow:hidden;margin-bottom:14px}
 .row{display:flex;align-items:center;padding:11px 16px;border-bottom:1px solid #F2F2F7;gap:8px;min-height:46px}
 .row:last-child{border-bottom:none}
 .row label{font-size:15px;color:#1C1C1E;flex:1;white-space:nowrap}
-.row input{
-  width:108px;flex-shrink:0;
-  font-size:15px;padding:5px 9px;
-  border:1px solid #D1D1D6;border-radius:8px;
-  background:#F9F9F9;color:#1C1C1E;
-  text-align:right;-webkit-appearance:none;
-  font-family:inherit;
-}
+.row input{width:108px;flex-shrink:0;font-size:15px;padding:5px 9px;border:1px solid #D1D1D6;border-radius:8px;background:#F9F9F9;color:#1C1C1E;text-align:right;-webkit-appearance:none;font-family:inherit}
 .row input:focus{outline:none;border-color:#007AFF;background:#fff}
-.row input.search-input{width:auto;flex:1;text-align:left}
+.row input.si{width:auto;flex:1;text-align:left}
 .row .u{font-size:14px;color:#8E8E93;width:20px;flex-shrink:0}
-.row select{
-  flex-shrink:0;font-size:14px;
-  padding:5px 8px;border:1px solid #D1D1D6;
-  border-radius:8px;background:#F9F9F9;
-  color:#1C1C1E;font-family:inherit;max-width:140px;
-}
+.row select{flex-shrink:0;font-size:14px;padding:5px 8px;border:1px solid #D1D1D6;border-radius:8px;background:#F9F9F9;color:#1C1C1E;font-family:inherit;max-width:150px}
 .row select:focus{outline:none;border-color:#007AFF}
-
-/* search hint */
-.search-wrap{position:relative;flex:1}
-.search-hint{
-  position:absolute;left:0;right:0;top:calc(100% + 4px);
-  background:#fff;border:1px solid #E5E5EA;border-radius:10px;
-  z-index:50;overflow:hidden;box-shadow:0 4px 12px rgba(0,0,0,.1)
-}
-.hint-item{padding:10px 14px;font-size:14px;cursor:pointer;border-bottom:1px solid #F2F2F7}
-.hint-item:last-child{border-bottom:none}
-.hint-item:active{background:#F2F2F7}
-.hint-code{font-weight:600;color:#1C1C1E}
-.hint-name{color:#8E8E93;font-size:12px;margin-top:1px}
-.hint-loading{padding:10px 14px;font-size:13px;color:#8E8E93}
-
-/* market toggle */
+.sw{position:relative;flex:1}
+.sh{position:absolute;left:0;right:0;top:calc(100% + 4px);background:#fff;border:1px solid #E5E5EA;border-radius:10px;z-index:50;overflow:hidden;box-shadow:0 4px 16px rgba(0,0,0,.12)}
+.hi{padding:10px 14px;font-size:14px;cursor:pointer;border-bottom:1px solid #F2F2F7}
+.hi:last-child{border-bottom:none}
+.hi:active{background:#F2F2F7}
+.hc{font-weight:600;color:#1C1C1E}
+.hn{color:#8E8E93;font-size:12px;margin-top:1px}
+.hp{color:#34C759;font-size:12px;margin-top:1px;font-weight:500}
+.hl{padding:10px 14px;font-size:13px;color:#8E8E93}
 .mkt-toggle{display:flex;background:#E5E5EA;border-radius:9px;padding:2px;margin-bottom:14px}
 .mkt-btn{flex:1;padding:7px 0;font-size:14px;text-align:center;cursor:pointer;border:none;background:transparent;border-radius:7px;color:#8E8E93;font-weight:500;font-family:inherit}
 .mkt-btn.on{background:#fff;color:#1C1C1E;font-weight:600;box-shadow:0 1px 3px rgba(0,0,0,.12)}
-
-/* section label */
 .slabel{font-size:12px;font-weight:600;color:#8E8E93;letter-spacing:.06em;text-transform:uppercase;margin:0 4px 7px}
-
-/* buttons */
 .btn{display:block;width:100%;padding:14px;margin-bottom:14px;background:#007AFF;color:#fff;border:none;border-radius:13px;font-size:16px;font-weight:600;cursor:pointer;font-family:inherit}
 .btn:active{opacity:.82}
 .btn.green{background:#34C759}
 .btn.ghost{background:#fff;color:#007AFF;border:1.5px solid #007AFF}
 .btn.ghost-red{background:#fff;color:#FF3B30;border:1.5px solid #FF3B30}
 .btn.sm{padding:9px;font-size:14px;border-radius:10px;margin-bottom:10px}
-
-/* result tiles */
 .g2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
 .tile{background:#fff;border-radius:13px;padding:14px 16px}
 .tile .lb{font-size:12px;color:#8E8E93;margin-bottom:5px}
 .tile .vl{font-size:20px;font-weight:700;color:#1C1C1E}
 .tile .sub{font-size:12px;color:#8E8E93;margin-top:3px}
-
-/* detail rows */
 .dr{display:flex;justify-content:space-between;align-items:center;padding:11px 16px;border-bottom:1px solid #F2F2F7;font-size:14px}
 .dr:last-child{border-bottom:none}
-.dr .lbl{color:#6C6C70}
-.dr .val{color:#1C1C1E;font-weight:500}
-
-/* colors */
+.dr .lbl{color:#6C6C70}.dr .val{color:#1C1C1E;font-weight:500}
 .pos{color:#34C759!important}.neg{color:#FF3B30!important}.neu{color:#FF9500!important}
-
-/* portfolio */
 .psbox{background:#fff;border-radius:13px;padding:14px 16px;margin-bottom:14px}
 .psr{display:flex;justify-content:space-between;font-size:14px;padding:4px 0}
 .psr .lbl{color:#6C6C70}.psr .val{color:#1C1C1E;font-weight:500}
 .divline{height:1px;background:#F2F2F7;margin:6px 0}
-.si{background:#fff;border-radius:13px;overflow:hidden;margin-bottom:10px}
-.sh{display:flex;justify-content:space-between;align-items:center;padding:13px 16px;cursor:pointer}
+.sitem{background:#fff;border-radius:13px;overflow:hidden;margin-bottom:10px}
+.shead{display:flex;justify-content:space-between;align-items:center;padding:13px 16px;cursor:pointer}
 .sname{font-size:15px;font-weight:600;color:#1C1C1E}
 .smeta{font-size:12px;color:#8E8E93;margin-top:2px}
 .spct{font-size:16px;font-weight:700;text-align:right}
@@ -107,46 +65,36 @@ html,body{
 .sdets{display:none;border-top:1px solid #F2F2F7}
 .sdets.open{display:block}
 .btn-del{display:inline-block;margin:0 16px 12px;font-size:13px;color:#FF3B30;background:#FFF2F2;border:none;border-radius:8px;padding:6px 14px;cursor:pointer;font-family:inherit}
-.mkt-badge{display:inline-block;font-size:10px;padding:2px 7px;border-radius:5px;margin-left:6px;font-weight:600;vertical-align:middle}
-.badge-tw{background:#FFF0F0;color:#FF3B30}
-.badge-us{background:#EFF6FF;color:#007AFF}
-
-/* tags */
+.mbadge{display:inline-block;font-size:10px;padding:2px 7px;border-radius:5px;margin-left:6px;font-weight:600;vertical-align:middle}
+.btw{background:#FFF0F0;color:#FF3B30}.bus{background:#EFF6FF;color:#007AFF}
 .tags{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
 .tag{font-size:13px;padding:6px 14px;border-radius:20px;cursor:pointer;background:#F2F2F7;color:#6C6C70;border:none;font-family:inherit}
 .tag.on{background:#E8F0FF;color:#0056CC;font-weight:600}
-
-/* broker settings */
-.broker-item{display:flex;align-items:center;padding:11px 16px;border-bottom:1px solid #F2F2F7;gap:8px}
-.broker-item:last-child{border-bottom:none}
-.broker-name{flex:1;font-size:15px;color:#1C1C1E}
-.broker-detail{font-size:12px;color:#8E8E93;margin-top:1px}
-.broker-edit-btn{font-size:12px;color:#007AFF;background:none;border:none;cursor:pointer;padding:4px 8px;font-family:inherit}
-
-/* modal */
-.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:100;align-items:flex-end;justify-content:center}
-.modal-overlay.open{display:flex}
+.bitem{display:flex;align-items:center;padding:11px 16px;border-bottom:1px solid #F2F2F7;gap:8px}
+.bitem:last-child{border-bottom:none}
+.bname{flex:1;font-size:15px;color:#1C1C1E}
+.bdetail{font-size:12px;color:#8E8E93;margin-top:1px}
+.bedit{font-size:12px;color:#007AFF;background:none;border:none;cursor:pointer;padding:4px 8px;font-family:inherit}
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:100;align-items:flex-end;justify-content:center}
+.overlay.open{display:flex}
 .modal{background:#fff;border-radius:20px 20px 0 0;padding:24px 20px 40px;width:100%;max-width:430px}
 .modal h3{font-size:17px;font-weight:700;margin-bottom:16px;color:#1C1C1E}
-.modal .mrow{display:flex;align-items:center;margin-bottom:12px;gap:10px}
-.modal .mrow label{font-size:14px;color:#6C6C70;width:90px;flex-shrink:0}
-.modal .mrow input{flex:1;font-size:15px;padding:8px 12px;border:1px solid #D1D1D6;border-radius:9px;background:#F9F9F9;color:#1C1C1E;font-family:inherit}
-.modal .mrow input:focus{outline:none;border-color:#007AFF;background:#fff}
-.modal .mrow .u{font-size:13px;color:#8E8E93;width:24px}
-.modal-note{font-size:12px;color:#8E8E93;margin-bottom:16px;line-height:1.5}
-
-/* table */
+.mrow{display:flex;align-items:center;margin-bottom:12px;gap:10px}
+.mrow label{font-size:14px;color:#6C6C70;width:90px;flex-shrink:0}
+.mrow input{flex:1;font-size:15px;padding:8px 12px;border:1px solid #D1D1D6;border-radius:9px;background:#F9F9F9;color:#1C1C1E;font-family:inherit}
+.mrow input:focus{outline:none;border-color:#007AFF;background:#fff}
+.mrow .u{font-size:13px;color:#8E8E93;width:28px}
+.mrow select{flex:1;font-size:14px;padding:8px;border:1px solid #D1D1D6;border-radius:9px;background:#F9F9F9;color:#1C1C1E;font-family:inherit}
+.mnote{font-size:12px;color:#8E8E93;margin-bottom:16px;line-height:1.5}
+.empty{text-align:center;padding:40px 16px;color:#8E8E93;font-size:14px;line-height:1.8}
+.note{font-size:11px;color:#8E8E93;margin:8px 4px 0}
+.price-row-hint{font-size:11px;color:#34C759;margin:-10px 4px 10px;padding:0 4px}
 table{width:100%;border-collapse:collapse;font-size:14px}
 th{font-size:11px;color:#8E8E93;font-weight:500;padding:8px;border-bottom:1px solid #E5E5EA;text-align:right}
 th:first-child{text-align:left}
 td{padding:10px 8px;text-align:right;color:#1C1C1E;border-bottom:1px solid #F2F2F7}
 td:first-child{text-align:left;font-weight:600}
 tr:last-child td{border-bottom:none}
-
-.empty{text-align:center;padding:40px 16px;color:#8E8E93;font-size:14px;line-height:1.8}
-.note{font-size:11px;color:#8E8E93;margin:8px 4px 0}
-.spinner{display:inline-block;width:14px;height:14px;border:2px solid #E5E5EA;border-top-color:#007AFF;border-radius:50%;animation:spin .6s linear infinite;vertical-align:middle;margin-left:6px}
-@keyframes spin{to{transform:rotate(360deg)}}
 </style>
 </head>
 <body>
@@ -158,31 +106,30 @@ tr:last-child td{border-bottom:none}
   <button class="tab" onclick="sw('set',this)">設定</button>
 </div>
 
-<!-- ===== 計算機 ===== -->
+<!-- 計算機 -->
 <div id="p-calc" class="page on">
   <div class="mkt-toggle">
     <button class="mkt-btn on" id="mkt-tw" onclick="setMkt('TW')">🇹🇼 台股</button>
     <button class="mkt-btn" id="mkt-us" onclick="setMkt('US')">🇺🇸 美股</button>
   </div>
-
   <div class="group">
     <div class="row">
       <label>代碼／名稱</label>
-      <div class="search-wrap">
-        <input id="c-code" class="search-input" type="text" placeholder="輸入代碼或名稱" autocomplete="off" oninput="onCodeInput()" onblur="hideHint()">
-        <div id="c-hint" class="search-hint" style="display:none"></div>
+      <div class="sw">
+        <input id="c-code" class="si" type="text" placeholder="輸入代碼或名稱" autocomplete="off" oninput="onInput('c')" onblur="hideHints('c')">
+        <div id="c-hint" class="sh" style="display:none"></div>
       </div>
     </div>
-    <div class="row"><label>查到名稱</label><span id="c-name" style="font-size:14px;color:#8E8E93;flex:1;text-align:right">—</span></div>
+    <div class="row"><label>股票名稱</label><span id="c-name" style="font-size:14px;color:#8E8E93;flex:1;text-align:right">—</span></div>
     <div class="row">
       <label>成本價</label>
       <input id="c-cost" type="number" placeholder="950" inputmode="decimal">
-      <span class="u" id="c-cost-u">元</span>
+      <span class="u" id="c-cu">元</span>
     </div>
     <div class="row">
       <label>現價</label>
-      <input id="c-price" type="number" placeholder="980" inputmode="decimal">
-      <span class="u" id="c-price-u">元</span>
+      <input id="c-price" type="number" placeholder="自動或手動填入" inputmode="decimal" style="width:108px">
+      <span class="u" id="c-pu">元</span>
     </div>
     <div class="row">
       <label>持有股數</label>
@@ -190,7 +137,7 @@ tr:last-child td{border-bottom:none}
       <span class="u">股</span>
     </div>
     <div class="row" id="c-rate-row" style="display:none">
-      <label>匯率（USD/TWD）</label>
+      <label>匯率 USD/TWD</label>
       <input id="c-rate" type="number" placeholder="32" inputmode="decimal" value="32">
       <span class="u">元</span>
     </div>
@@ -201,25 +148,19 @@ tr:last-child td{border-bottom:none}
   </div>
   <div id="c-broker-note" style="font-size:12px;color:#8E8E93;margin:-8px 4px 12px;line-height:1.6"></div>
   <button class="btn green" onclick="doPnl()">計算損益</button>
-
   <div id="res-pnl" style="display:none">
     <div class="g2">
       <div class="tile"><div class="lb">損益 %</div><div class="vl" id="r-pct">—</div></div>
-      <div class="tile"><div class="lb">損益金額</div><div class="vl" id="r-amt">—</div><div class="sub" id="r-amt-sub"></div></div>
+      <div class="tile"><div class="lb">損益金額</div><div class="vl" id="r-amt">—</div><div class="sub" id="r-sub"></div></div>
       <div class="tile"><div class="lb">兩平賣價</div><div class="vl" id="r-be" style="font-size:16px">—</div></div>
       <div class="tile"><div class="lb">手續費＋稅</div><div class="vl" id="r-fee" style="font-size:16px">—</div></div>
     </div>
     <div class="slabel">費用明細</div>
-    <div class="group" id="r-fee-detail"></div>
-
+    <div class="group" id="r-feerows"></div>
     <div class="slabel">攤平計算</div>
     <div class="group">
       <div class="row"><label>加碼股數</label><input id="av-shares" type="number" placeholder="100" inputmode="numeric" value="100"><span class="u">股</span></div>
-      <div class="row">
-        <label>加碼價格</label>
-        <input id="av-price" type="number" placeholder="920" inputmode="decimal">
-        <span class="u" id="av-price-u">元</span>
-      </div>
+      <div class="row"><label>加碼價格</label><input id="av-price" type="number" placeholder="920" inputmode="decimal"><span class="u" id="av-u">元</span></div>
     </div>
     <button class="btn ghost sm" onclick="doAvg()">計算攤平</button>
     <div id="res-avg" style="display:none" class="group">
@@ -230,7 +171,7 @@ tr:last-child td{border-bottom:none}
   </div>
 </div>
 
-<!-- ===== 持股 ===== -->
+<!-- 持股 -->
 <div id="p-port" class="page">
   <div id="ps-box" class="psbox" style="display:none">
     <div class="slabel" style="margin:0 0 8px">組合概覽（台幣）</div>
@@ -250,26 +191,23 @@ tr:last-child td{border-bottom:none}
     </div>
     <div class="row">
       <label>代碼／名稱</label>
-      <div class="search-wrap">
-        <input id="p-code" class="search-input" type="text" placeholder="輸入代碼或名稱" autocomplete="off" oninput="onPortCodeInput()" onblur="hidePortHint()">
-        <div id="p-hint" class="search-hint" style="display:none"></div>
+      <div class="sw">
+        <input id="p-code" class="si" type="text" placeholder="輸入代碼或名稱" autocomplete="off" oninput="onInput('p')" onblur="hideHints('p')">
+        <div id="p-hint" class="sh" style="display:none"></div>
       </div>
     </div>
-    <div class="row"><label>查到名稱</label><span id="p-name-display" style="font-size:14px;color:#8E8E93;flex:1;text-align:right">—</span></div>
-    <div class="row"><label>成本價</label><input id="p-cost" type="number" inputmode="decimal" placeholder="950"><span class="u" id="p-cost-u">元</span></div>
-    <div class="row"><label>現價</label><input id="p-price" type="number" inputmode="decimal" placeholder="980"><span class="u" id="p-price-u">元</span></div>
+    <div class="row"><label>股票名稱</label><span id="p-name" style="font-size:14px;color:#8E8E93;flex:1;text-align:right">—</span></div>
+    <div class="row"><label>成本價</label><input id="p-cost" type="number" inputmode="decimal" placeholder="950"><span class="u" id="p-cu">元</span></div>
+    <div class="row"><label>現價</label><input id="p-price" type="number" inputmode="decimal" placeholder="自動或手動填入"><span class="u" id="p-pu">元</span></div>
     <div class="row"><label>持有股數</label><input id="p-shares" type="number" inputmode="numeric" placeholder="100" value="100"><span class="u">股</span></div>
-    <div class="row" id="p-rate-row" style="display:none"><label>匯率</label><input id="p-rate" type="number" inputmode="decimal" placeholder="32" value="32"><span class="u">元</span></div>
-    <div class="row">
-      <label>券商</label>
-      <select id="p-broker"></select>
-    </div>
+    <div class="row" id="p-rate-row" style="display:none"><label>匯率 USD/TWD</label><input id="p-rate" type="number" inputmode="decimal" placeholder="32" value="32"><span class="u">元</span></div>
+    <div class="row"><label>券商</label><select id="p-broker"></select></div>
   </div>
   <button class="btn green" onclick="addStock()">新增持股</button>
   <div id="slist"></div>
 </div>
 
-<!-- ===== 網格 ===== -->
+<!-- 網格 -->
 <div id="p-grid" class="page">
   <div class="group">
     <div class="row"><label>基準價格</label><input id="g-p" type="number" placeholder="100" inputmode="decimal"><span class="u">元</span></div>
@@ -301,53 +239,52 @@ tr:last-child td{border-bottom:none}
   <div id="res-grid" style="display:none"></div>
 </div>
 
-<!-- ===== 設定 ===== -->
+<!-- 設定 -->
 <div id="p-set" class="page">
   <div class="slabel">券商管理</div>
   <div class="group" id="broker-list"></div>
-  <button class="btn ghost sm" onclick="openBrokerModal(null)">＋ 新增券商</button>
+  <button class="btn ghost sm" onclick="openModal(null)">＋ 新增券商</button>
 </div>
 
-<!-- 券商 Modal -->
-<div class="modal-overlay" id="broker-modal" onclick="closeBrokerModal(event)">
+<!-- Modal -->
+<div class="overlay" id="bmodal" onclick="closeModal(event)">
   <div class="modal" onclick="event.stopPropagation()">
     <h3 id="modal-title">新增券商</h3>
-    <div class="mrow"><label>券商名稱</label><input id="m-name" type="text" placeholder="例：富途、永豐"></div>
+    <div class="mrow"><label>名稱</label><input id="m-name" type="text" placeholder="例：富途、永豐"></div>
     <div class="mrow"><label>市場</label>
-      <select id="m-mkt" style="flex:1;font-size:15px;padding:8px 12px;border:1px solid #D1D1D6;border-radius:9px;background:#F9F9F9;color:#1C1C1E;font-family:inherit" onchange="renderModalFeeFields()">
+      <select id="m-mkt" onchange="renderModalFields()">
         <option value="TW">🇹🇼 台股</option>
         <option value="US">🇺🇸 美股</option>
       </select>
     </div>
-    <div id="modal-fee-fields"></div>
-    <p class="modal-note" id="modal-note"></p>
+    <div id="m-fields"></div>
+    <p class="mnote" id="m-note"></p>
     <button class="btn green sm" onclick="saveBroker()">儲存</button>
-    <button class="btn ghost-red sm" id="m-del-btn" onclick="deleteBroker()" style="display:none">刪除此券商</button>
-    <button class="btn ghost sm" style="margin-bottom:0" onclick="closeBrokerModal()">取消</button>
+    <button class="btn ghost-red sm" id="m-del" onclick="deleteBroker()" style="display:none">刪除此券商</button>
+    <button class="btn ghost sm" style="margin-bottom:0" onclick="closeModal()">取消</button>
   </div>
 </div>
 
 <script>
-// ─── 預設券商 ───
-const DEFAULT_BROKERS = [
-  {id:'b1',name:'台股預設',mkt:'TW',type:'pct',buyPct:0.1425,sellPct:0.1425,tax:0.3,minFee:20},
+// ── data ──
+const DEF_BROKERS = [
+  {id:'b1',name:'台股標準',mkt:'TW',buyPct:0.1425,sellPct:0.1425,tax:0.3,minFee:20},
   {id:'b2',name:'美股零手續費',mkt:'US',type:'fixed',perShare:0,minFee:0},
-  {id:'b3',name:'美股每股手續費',mkt:'US',type:'perShare',perShare:0.005,minFee:0.99},
+  {id:'b3',name:'美股 IB/每股',mkt:'US',type:'perShare',perShare:0.005,minFee:0.99},
 ];
-
-let brokers = JSON.parse(localStorage.getItem('brokers')||'null') || DEFAULT_BROKERS;
-let stocks  = JSON.parse(localStorage.getItem('twstk2')||'[]');
+let brokers = JSON.parse(localStorage.getItem('brokers')||'null') || DEF_BROKERS;
+let stocks  = JSON.parse(localStorage.getItem('twstk3')||'[]');
 let curMkt  = 'TW';
-let editBrokerIdx = null;
+let editIdx = null;
 let hintTimer = null;
 
 function save(){
   localStorage.setItem('brokers', JSON.stringify(brokers));
-  localStorage.setItem('twstk2', JSON.stringify(stocks));
+  localStorage.setItem('twstk3', JSON.stringify(stocks));
 }
 
-// ─── Tabs ───
-function sw(id, el){
+// ── tabs ──
+function sw(id,el){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('on'));
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));
   document.getElementById('p-'+id).classList.add('on');
@@ -355,249 +292,223 @@ function sw(id, el){
   if(id==='set') renderBrokerList();
 }
 
-// ─── Market toggle ───
+// ── market ──
 function setMkt(m){
-  curMkt = m;
-  document.getElementById('mkt-tw').classList.toggle('on', m==='TW');
-  document.getElementById('mkt-us').classList.toggle('on', m==='US');
-  const isUS = m==='US';
-  const u = isUS ? 'USD' : '元';
-  document.getElementById('c-cost-u').textContent = u;
-  document.getElementById('c-price-u').textContent = u;
-  document.getElementById('av-price-u').textContent = u;
-  document.getElementById('c-rate-row').style.display = isUS ? '' : 'none';
-  document.getElementById('c-code').value = '';
-  document.getElementById('c-name').textContent = '—';
-  document.getElementById('res-pnl').style.display = 'none';
-  fillBrokerSelect('c-broker', m);
+  curMkt=m;
+  ['tw','us'].forEach(x=>document.getElementById('mkt-'+x).classList.toggle('on',x===m.toLowerCase()));
+  const u=m==='US'?'USD':'元';
+  document.getElementById('c-cu').textContent=u;
+  document.getElementById('c-pu').textContent=u;
+  document.getElementById('av-u').textContent=u;
+  document.getElementById('c-rate-row').style.display=m==='US'?'':'none';
+  document.getElementById('c-code').value='';
+  document.getElementById('c-name').textContent='—';
+  document.getElementById('c-price').value='';
+  document.getElementById('res-pnl').style.display='none';
+  fillSel('c-broker',m);
   renderBrokerNote();
 }
-
 function onPortMktChange(){
-  const m = document.getElementById('p-mkt').value;
-  const isUS = m==='US';
-  const u = isUS ? 'USD' : '元';
-  document.getElementById('p-cost-u').textContent = u;
-  document.getElementById('p-price-u').textContent = u;
-  document.getElementById('p-rate-row').style.display = isUS ? '' : 'none';
-  fillBrokerSelect('p-broker', m);
+  const m=document.getElementById('p-mkt').value;
+  const u=m==='US'?'USD':'元';
+  document.getElementById('p-cu').textContent=u;
+  document.getElementById('p-pu').textContent=u;
+  document.getElementById('p-rate-row').style.display=m==='US'?'':'none';
+  fillSel('p-broker',m);
 }
-
-// ─── Broker select ───
-function fillBrokerSelect(selId, mkt){
-  const sel = document.getElementById(selId);
-  const list = brokers.filter(b=>b.mkt===mkt);
-  sel.innerHTML = list.length
-    ? list.map(b=>`<option value="${b.id}">${b.name}</option>`).join('')
-    : `<option value="">（無券商，請先新增）</option>`;
+function fillSel(id,mkt){
+  const s=document.getElementById(id);
+  const list=brokers.filter(b=>b.mkt===mkt);
+  s.innerHTML=list.length
+    ?list.map(b=>`<option value="${b.id}">${b.name}</option>`).join('')
+    :'<option value="">（請先新增券商）</option>';
 }
-
 function renderBrokerNote(){
-  const sel = document.getElementById('c-broker');
-  const b = brokers.find(x=>x.id===sel.value);
-  const el = document.getElementById('c-broker-note');
+  const b=brokers.find(x=>x.id===document.getElementById('c-broker').value);
+  const el=document.getElementById('c-broker-note');
   if(!b){el.textContent='';return}
-  if(b.mkt==='TW'){
-    el.textContent = `買 ${b.buyPct}% + 賣 ${b.sellPct}% + 證交稅 ${b.tax}%，最低手續費 ${b.minFee} 元`;
-  } else if(b.type==='fixed'){
-    el.textContent = `零手續費`;
-  } else if(b.type==='perShare'){
-    el.textContent = `每股 $${b.perShare}，最低 $${b.minFee}`;
-  } else {
-    el.textContent = `買 ${b.buyPct}% + 賣 ${b.sellPct}%，最低 $${b.minFee}`;
-  }
+  el.textContent=b.mkt==='TW'
+    ?`買 ${b.buyPct}% + 賣 ${b.sellPct}% + 稅 ${b.tax}%，最低 ${b.minFee} 元`
+    :b.type==='perShare'?`每股 $${b.perShare}，最低 $${b.minFee}`
+    :b.type==='pct'?`買 ${b.buyPct}% + 賣 ${b.sellPct}%`
+    :'零手續費';
 }
 
-// ─── Fee calculation ───
-function calcFees(b, mkt, cost, price, shares, rate){
-  rate = rate || 1;
-  if(mkt === 'TW'){
-    const buyAmt  = cost * shares;
-    const sellAmt = price * shares;
-    const buyFee  = Math.max(Math.round(buyAmt * b.buyPct / 100), b.minFee);
-    const sellFee = Math.max(Math.round(sellAmt * b.sellPct / 100), b.minFee);
-    const tax     = Math.round(sellAmt * b.tax / 100);
-    const totalFee = buyFee + sellFee + tax;
-    const net  = (price - cost) * shares - totalFee;
-    const pct  = net / (buyAmt + buyFee) * 100;
-    const be   = (cost * shares + buyFee + b.minFee) / shares * (1 + b.tax/100) + (b.minFee / shares);
-    // simpler breakeven
-    const breakEven = (cost + (buyFee + b.minFee + b.minFee) / shares) / (1 - b.sellPct/100 - b.tax/100);
-    return {
-      rows:[
-        {lbl:`買進手續費 ${b.buyPct}%（最低${b.minFee}元）`, val:`${fmt(buyFee)} 元`},
-        {lbl:`賣出手續費 ${b.sellPct}%（最低${b.minFee}元）`, val:`${fmt(sellFee)} 元`},
-        {lbl:`證交稅 ${b.tax}%`, val:`${fmt(tax)} 元`},
-      ],
-      totalFee, net, pct,
-      amtStr: fmtD(net)+'元',
-      amtSub: '',
-      feeStr: fmt(totalFee)+'元',
-      beStr:  breakEven.toFixed(2)+'元',
-    };
-  } else {
-    // US stock
-    let buyFee=0, sellFee=0;
-    if(b.type==='perShare'){
-      buyFee  = Math.max(shares * b.perShare, b.minFee);
-      sellFee = Math.max(shares * b.perShare, b.minFee);
-    } else if(b.type==='pct'){
-      buyFee  = Math.max(cost*shares*b.buyPct/100, b.minFee);
-      sellFee = Math.max(price*shares*b.sellPct/100, b.minFee);
-    }
-    const totalFeeUSD = buyFee + sellFee;
-    const netUSD = (price - cost)*shares - totalFeeUSD;
-    const pct = netUSD / (cost*shares + buyFee) * 100;
-    const netTWD = netUSD * rate;
-    const beUSD = (cost*shares + buyFee + sellFee) / shares;
-    return {
-      rows:[
-        {lbl:`買進手續費`, val:`$${buyFee.toFixed(2)}`},
-        {lbl:`賣出手續費`, val:`$${sellFee.toFixed(2)}`},
-      ],
-      totalFee:totalFeeUSD, net:netUSD, pct,
-      amtStr: (netUSD>=0?'+':'')+netUSD.toFixed(2)+' USD',
-      amtSub: '≈ '+(netTWD>=0?'+':'')+fmt(netTWD)+' 元',
-      feeStr: '$'+totalFeeUSD.toFixed(2),
-      beStr:  '$'+beUSD.toFixed(3),
-    };
-  }
+// ── Yahoo Finance via allorigins proxy ──
+async function yahooSearch(q){
+  const url=`https://query1.finance.yahoo.com/v1/finance/search?q=${encodeURIComponent(q)}&quotesCount=6&newsCount=0&lang=zh-TW&region=TW`;
+  const proxy=`https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
+  const res=await fetch(proxy,{signal:AbortSignal.timeout(6000)});
+  const json=await res.json();
+  return JSON.parse(json.contents);
 }
 
-// ─── 計算損益 ───
-function doPnl(){
-  const cost   = +document.getElementById('c-cost').value;
-  const price  = +document.getElementById('c-price').value;
-  const shares = +document.getElementById('c-shares').value||1;
-  const rate   = +document.getElementById('c-rate').value||32;
-  if(!cost||!price) return;
-  const bId = document.getElementById('c-broker').value;
-  const b   = brokers.find(x=>x.id===bId);
-  if(!b){alert('請先在「設定」新增券商');return}
-  const r = calcFees(b, curMkt, cost, price, shares, rate);
-
-  const cl = r.pct>=0?'pos':'neg';
-  document.getElementById('r-pct').textContent = fmtP(r.pct);
-  document.getElementById('r-pct').className = 'vl '+cl;
-  document.getElementById('r-amt').textContent = r.amtStr;
-  document.getElementById('r-amt').className = 'vl '+cl;
-  document.getElementById('r-amt-sub').textContent = r.amtSub;
-  document.getElementById('r-be').textContent = r.beStr;
-  document.getElementById('r-fee').textContent = r.feeStr;
-
-  const fd = document.getElementById('r-fee-detail');
-  fd.innerHTML = r.rows.map(row=>`<div class="dr"><span class="lbl">${row.lbl}</span><span class="val">${row.val}</span></div>`).join('');
-  document.getElementById('res-pnl').style.display = 'block';
+async function yahooPrice(symbol){
+  const url=`https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?interval=1d&range=1d`;
+  const proxy=`https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
+  const res=await fetch(proxy,{signal:AbortSignal.timeout(6000)});
+  const json=await res.json();
+  const data=JSON.parse(json.contents);
+  const meta=data?.chart?.result?.[0]?.meta;
+  return meta?.regularMarketPrice || meta?.previousClose || null;
 }
 
-// ─── 攤平 ───
-function doAvg(){
-  const cost   = +document.getElementById('c-cost').value||0;
-  const shares = +document.getElementById('c-shares').value||1;
-  const al     = +document.getElementById('av-shares').value||1;
-  const ap     = +document.getElementById('av-price').value||0;
-  if(!cost||!ap) return;
-  const avg = (cost*shares + ap*al) / (shares+al);
-  const bId = document.getElementById('c-broker').value;
-  const b   = brokers.find(x=>x.id===bId);
-  const u   = curMkt==='US'?'USD':'元';
-  document.getElementById('av-r1').textContent = avg.toFixed(curMkt==='US'?3:2)+' '+u;
-  document.getElementById('av-r2').textContent = (shares+al)+' 股';
-  if(b && curMkt==='TW'){
-    const be = avg*(1+(b.buyPct+b.sellPct+b.tax)/100);
-    document.getElementById('av-r3').textContent = be.toFixed(2)+' 元';
-  } else {
-    document.getElementById('av-r3').textContent = '—';
-  }
-  document.getElementById('res-avg').style.display = 'block';
-}
-
-// ─── Stock search (Yahoo Finance) ───
-let hintTarget = null;
-
-function onCodeInput(){
+let hintCbs={};
+function onInput(prefix){
   clearTimeout(hintTimer);
-  const q = document.getElementById('c-code').value.trim();
-  if(q.length < 1){hideHint();return}
-  hintTimer = setTimeout(()=>searchStock(q,'c-code','c-hint','c-name',curMkt), 400);
+  const q=document.getElementById(prefix+'-code').value.trim();
+  if(q.length<1){document.getElementById(prefix+'-hint').style.display='none';return}
+  const mkt=prefix==='c'?curMkt:document.getElementById('p-mkt').value;
+  hintTimer=setTimeout(()=>doSearch(prefix,q,mkt),450);
 }
-function onPortCodeInput(){
-  clearTimeout(hintTimer);
-  const q = document.getElementById('p-code').value.trim();
-  const m = document.getElementById('p-mkt').value;
-  if(q.length < 1){hidePortHint();return}
-  hintTimer = setTimeout(()=>searchStock(q,'p-code','p-hint','p-name-display',m), 400);
-}
-
-async function searchStock(q, inputId, hintId, nameId, mkt){
-  const hint = document.getElementById(hintId);
-  hint.innerHTML = '<div class="hint-loading">搜尋中…</div>';
-  hint.style.display = 'block';
-
-  // For TW stocks, append .TW suffix if numeric
-  let query = q;
-  if(mkt==='TW' && /^\d+$/.test(q)) query = q+'.TW';
-
+async function doSearch(prefix,q,mkt){
+  const hintEl=document.getElementById(prefix+'-hint');
+  hintEl.innerHTML='<div class="hl">搜尋中…</div>';
+  hintEl.style.display='block';
   try{
-    const res = await fetch(`https://query1.finance.yahoo.com/v1/finance/search?q=${encodeURIComponent(query)}&lang=zh-TW&region=TW&quotesCount=5&newsCount=0`);
-    if(!res.ok) throw new Error();
-    const data = await res.json();
-    const quotes = (data.quotes||[]).filter(q=>q.symbol && q.quoteType && ['EQUITY','ETF'].includes(q.quoteType));
-    if(!quotes.length){
-      hint.innerHTML = '<div class="hint-loading">找不到結果</div>';
-      return;
+    let query=q;
+    if(mkt==='TW'&&/^\d+$/.test(q)) query=q+'.TW';
+    const data=await yahooSearch(query);
+    const quotes=(data.quotes||[]).filter(q=>['EQUITY','ETF','MUTUALFUND'].includes(q.quoteType));
+    if(!quotes.length){hintEl.innerHTML='<div class="hl">找不到結果</div>';return}
+    hintEl.innerHTML=quotes.slice(0,5).map(q=>{
+      const sym=q.symbol;
+      const nm=(q.shortname||q.longname||'').replace(/'/g,"\\'");
+      return`<div class="hi" onmousedown="pickStock('${prefix}','${sym}','${nm}')">
+        <div class="hc">${sym}</div>
+        <div class="hn">${q.shortname||q.longname||''}</div>
+      </div>`;
+    }).join('');
+  }catch(e){
+    hintEl.innerHTML='<div class="hl">查詢失敗，請確認網路</div>';
+  }
+}
+
+async function pickStock(prefix, sym, nm){
+  document.getElementById(prefix+'-code').value=sym;
+  document.getElementById(prefix+'-name').textContent=nm||'—';
+  document.getElementById(prefix+'-hint').style.display='none';
+  // 自動抓現價
+  const priceEl=document.getElementById(prefix+'-price');
+  priceEl.placeholder='抓取中…';
+  try{
+    const p=await yahooPrice(sym);
+    if(p){
+      priceEl.value=p;
+      priceEl.placeholder='';
+      // 閃綠提示
+      priceEl.style.borderColor='#34C759';
+      setTimeout(()=>priceEl.style.borderColor='',1500);
+    } else {
+      priceEl.placeholder='請手動輸入';
     }
-    hint.innerHTML = quotes.slice(0,5).map(q=>`
-      <div class="hint-item" onmousedown="pickStock('${q.symbol}','${(q.shortname||q.longname||'').replace(/'/g,"\\'")}','${inputId}','${hintId}','${nameId}')">
-        <div class="hint-code">${q.symbol}</div>
-        <div class="hint-name">${q.shortname||q.longname||''}</div>
-      </div>`).join('');
-  } catch(e){
-    hint.innerHTML = '<div class="hint-loading">查詢失敗（需網路）</div>';
+  }catch(e){
+    priceEl.placeholder='請手動輸入';
   }
 }
 
-function pickStock(symbol, name, inputId, hintId, nameId){
-  document.getElementById(inputId).value = symbol;
-  document.getElementById(nameId).textContent = name || '—';
-  document.getElementById(hintId).style.display = 'none';
+function hideHints(prefix){
+  setTimeout(()=>{document.getElementById(prefix+'-hint').style.display='none'},200);
 }
-function hideHint(){setTimeout(()=>{document.getElementById('c-hint').style.display='none'},200)}
-function hidePortHint(){setTimeout(()=>{document.getElementById('p-hint').style.display='none'},200)}
 
-// ─── Portfolio ───
+// ── fee calc ──
+function calcFees(b,mkt,cost,price,shares,rate){
+  rate=rate||1;
+  if(mkt==='TW'){
+    const ba=cost*shares, sa=price*shares;
+    const bf=Math.max(Math.round(ba*b.buyPct/100), b.minFee);
+    const sf=Math.max(Math.round(sa*b.sellPct/100), b.minFee);
+    const tx=Math.round(sa*b.tax/100);
+    const fee=bf+sf+tx;
+    const net=(price-cost)*shares-fee;
+    const pct=net/(ba+bf)*100;
+    const be=(cost*shares+bf+sf+b.minFee)/shares/(1-b.tax/100);
+    return{rows:[
+      {lbl:`買進手續費 ${b.buyPct}%（最低${b.minFee}元）`,val:`${fmt(bf)} 元`},
+      {lbl:`賣出手續費 ${b.sellPct}%（最低${b.minFee}元）`,val:`${fmt(sf)} 元`},
+      {lbl:`證交稅 ${b.tax}%`,val:`${fmt(tx)} 元`},
+    ],fee,net,pct,
+    amtStr:fmtD(net)+'元',amtSub:'',feeStr:fmt(fee)+'元',beStr:be.toFixed(2)+'元'};
+  } else {
+    let bf=0,sf=0;
+    if(b.type==='perShare'){bf=Math.max(shares*b.perShare,b.minFee);sf=Math.max(shares*b.perShare,b.minFee);}
+    else if(b.type==='pct'){bf=Math.max(cost*shares*b.buyPct/100,b.minFee);sf=Math.max(price*shares*b.sellPct/100,b.minFee);}
+    const fee=bf+sf;
+    const netUSD=(price-cost)*shares-fee;
+    const pct=netUSD/(cost*shares+bf)*100;
+    const netTWD=netUSD*rate;
+    const be=(cost*shares+bf+sf)/shares;
+    return{rows:[
+      {lbl:'買進手續費',val:'$'+bf.toFixed(2)},
+      {lbl:'賣出手續費',val:'$'+sf.toFixed(2)},
+    ],fee,net:netUSD,pct,
+    amtStr:(netUSD>=0?'+':'')+netUSD.toFixed(2)+' USD',
+    amtSub:'≈ '+(netTWD>=0?'+':'')+fmt(netTWD)+' 元',
+    feeStr:'$'+fee.toFixed(2),beStr:'$'+be.toFixed(3)};
+  }
+}
+
+// ── 計算損益 ──
+function doPnl(){
+  const cost=+document.getElementById('c-cost').value;
+  const price=+document.getElementById('c-price').value;
+  const shares=+document.getElementById('c-shares').value||1;
+  const rate=+document.getElementById('c-rate').value||32;
+  if(!cost||!price){alert('請填入成本價與現價');return}
+  const b=brokers.find(x=>x.id===document.getElementById('c-broker').value);
+  if(!b){alert('請先在「設定」新增券商');return}
+  const r=calcFees(b,curMkt,cost,price,shares,rate);
+  const cl=r.pct>=0?'pos':'neg';
+  document.getElementById('r-pct').textContent=fmtP(r.pct);
+  document.getElementById('r-pct').className='vl '+cl;
+  document.getElementById('r-amt').textContent=r.amtStr;
+  document.getElementById('r-amt').className='vl '+cl;
+  document.getElementById('r-sub').textContent=r.amtSub;
+  document.getElementById('r-be').textContent=r.beStr;
+  document.getElementById('r-fee').textContent=r.feeStr;
+  document.getElementById('r-feerows').innerHTML=r.rows.map(x=>`<div class="dr"><span class="lbl">${x.lbl}</span><span class="val">${x.val}</span></div>`).join('');
+  document.getElementById('res-pnl').style.display='block';
+}
+
+// ── 攤平 ──
+function doAvg(){
+  const cost=+document.getElementById('c-cost').value||0;
+  const shares=+document.getElementById('c-shares').value||1;
+  const al=+document.getElementById('av-shares').value||1;
+  const ap=+document.getElementById('av-price').value||0;
+  if(!cost||!ap)return;
+  const avg=(cost*shares+ap*al)/(shares+al);
+  const b=brokers.find(x=>x.id===document.getElementById('c-broker').value);
+  const u=curMkt==='US'?'USD':'元';
+  document.getElementById('av-r1').textContent=avg.toFixed(curMkt==='US'?3:2)+' '+u;
+  document.getElementById('av-r2').textContent=(shares+al)+' 股';
+  if(b&&curMkt==='TW'){
+    const be=avg*(1+(b.buyPct+b.sellPct+b.tax)/100);
+    document.getElementById('av-r3').textContent=be.toFixed(2)+' 元';
+  } else { document.getElementById('av-r3').textContent='—'; }
+  document.getElementById('res-avg').style.display='block';
+}
+
+// ── portfolio ──
 function renderPort(){
-  const el = document.getElementById('slist');
-  if(!stocks.length){
-    el.innerHTML = '<div class="empty">尚無持股<br>點上方新增</div>';
-    document.getElementById('ps-box').style.display='none';
-    return;
-  }
-  let tc=0, tv=0, tp=0;
-  el.innerHTML = stocks.map((s,i)=>{
-    const b = brokers.find(x=>x.id===s.brokerId) || brokers[0];
-    if(!b) return '';
-    const rate = s.rate||32;
-    const r = calcFees(b, s.mkt, s.cost, s.price, s.shares, rate);
-    // convert to TWD for summary
-    const costTWD  = s.mkt==='US' ? s.cost*s.shares*rate : s.cost*s.shares;
-    const priceTWD = s.mkt==='US' ? s.price*s.shares*rate : s.price*s.shares;
-    const netTWD   = s.mkt==='US' ? r.net*rate : r.net;
-    tc+=costTWD; tv+=priceTWD; tp+=netTWD;
-    const cl = r.pct>=0?'pos':'neg';
-    const badge = s.mkt==='US'
-      ? '<span class="mkt-badge badge-us">美股</span>'
-      : '<span class="mkt-badge badge-tw">台股</span>';
-    return `<div class="si">
-      <div class="sh" onclick="togDet(${i})">
-        <div>
-          <div class="sname">${s.code} ${badge}</div>
-          <div class="smeta">${s.name||''} · ${s.shares}股 · 成本 ${s.cost}</div>
-        </div>
-        <div>
-          <div class="spct ${cl}">${fmtP(r.pct)}</div>
-          <div class="samt">${r.amtStr}</div>
-        </div>
+  const el=document.getElementById('slist');
+  if(!stocks.length){el.innerHTML='<div class="empty">尚無持股<br>點上方新增</div>';document.getElementById('ps-box').style.display='none';return;}
+  let tc=0,tv=0,tp=0;
+  el.innerHTML=stocks.map((s,i)=>{
+    const b=brokers.find(x=>x.id===s.brokerId)||brokers[0];
+    if(!b)return'';
+    const rate=s.rate||32;
+    const r=calcFees(b,s.mkt,s.cost,s.price,s.shares,rate);
+    const cTWD=s.mkt==='US'?s.cost*s.shares*rate:s.cost*s.shares;
+    const vTWD=s.mkt==='US'?s.price*s.shares*rate:s.price*s.shares;
+    const nTWD=s.mkt==='US'?r.net*rate:r.net;
+    tc+=cTWD;tv+=vTWD;tp+=nTWD;
+    const cl=r.pct>=0?'pos':'neg';
+    const badge=s.mkt==='US'?'<span class="mbadge bus">美股</span>':'<span class="mbadge btw">台股</span>';
+    return`<div class="sitem">
+      <div class="shead" onclick="togDet(${i})">
+        <div><div class="sname">${s.code}${badge}</div><div class="smeta">${s.name?s.name+' · ':''} ${s.shares}股 · 成本 ${s.cost}</div></div>
+        <div><div class="spct ${cl}">${fmtP(r.pct)}</div><div class="samt">${r.amtStr}</div></div>
       </div>
       <div class="sdets" id="d${i}">
         <div class="dr"><span class="lbl">現價</span><span class="val">${s.price}</span></div>
@@ -609,115 +520,97 @@ function renderPort(){
       </div>
     </div>`;
   }).join('');
-
-  const pc = tp>=0?'pos':'neg';
-  document.getElementById('ps-c').textContent = fmt(tc)+' 元';
-  document.getElementById('ps-v').textContent = fmt(tv)+' 元';
-  const pEl = document.getElementById('ps-p');
-  pEl.textContent = fmtD(tp)+' 元';
-  pEl.className = 'val '+pc;
-  document.getElementById('ps-box').style.display = 'block';
+  const pc=tp>=0?'pos':'neg';
+  document.getElementById('ps-c').textContent=fmt(tc)+' 元';
+  document.getElementById('ps-v').textContent=fmt(tv)+' 元';
+  const pEl=document.getElementById('ps-p');
+  pEl.textContent=fmtD(tp)+' 元';
+  pEl.className='val '+pc;
+  document.getElementById('ps-box').style.display='block';
 }
-
 function togDet(i){document.getElementById('d'+i).classList.toggle('open')}
 function delS(e,i){e.stopPropagation();stocks.splice(i,1);save();renderPort()}
-
 function addStock(){
-  const code   = document.getElementById('p-code').value.trim();
-  const name   = document.getElementById('p-name-display').textContent;
-  const cost   = +document.getElementById('p-cost').value;
-  const price  = +document.getElementById('p-price').value;
-  const shares = +document.getElementById('p-shares').value||1;
-  const mkt    = document.getElementById('p-mkt').value;
-  const rate   = +document.getElementById('p-rate').value||32;
-  const bId    = document.getElementById('p-broker').value;
+  const code=document.getElementById('p-code').value.trim();
+  const name=document.getElementById('p-name').textContent;
+  const cost=+document.getElementById('p-cost').value;
+  const price=+document.getElementById('p-price').value;
+  const shares=+document.getElementById('p-shares').value||1;
+  const mkt=document.getElementById('p-mkt').value;
+  const rate=+document.getElementById('p-rate').value||32;
+  const bId=document.getElementById('p-broker').value;
   if(!code||!cost||!price){alert('請填入代碼、成本價與現價');return}
-  stocks.push({code, name:name==='—'?'':name, cost, price, shares, mkt, rate, brokerId:bId});
-  save(); renderPort();
+  stocks.push({code,name:name==='—'?'':name,cost,price,shares,mkt,rate,brokerId:bId});
+  save();renderPort();
   ['p-code','p-cost','p-price','p-shares'].forEach(id=>document.getElementById(id).value='');
-  document.getElementById('p-name-display').textContent = '—';
+  document.getElementById('p-name').textContent='—';
 }
 
-// ─── Grid ───
+// ── grid ──
 function pickTag(el,dir,val){
   document.getElementById('tags-'+dir).querySelectorAll('.tag').forEach(t=>t.classList.remove('on'));
   el.classList.add('on');
-  document.getElementById('g-'+dir).value = val;
+  document.getElementById('g-'+dir).value=val;
 }
-
 function doGrid(){
-  const base = +document.getElementById('g-p').value||100;
-  const dn   = +document.getElementById('g-dn').value||3;
-  const up   = +document.getElementById('g-up').value||3;
-  const bp   = +document.getElementById('g-bp').value||5;
-  const sp   = +document.getElementById('g-sp').value||5;
-  const cap  = (+document.getElementById('g-cap').value||10)*10000;
-  const rows = [-3,-2,-1,0,1,2,3].map(lv=>{
-    const p   = base * Math.pow(1+(lv>=0?up:-dn)/100, Math.abs(lv));
-    const act = lv<0?'買入':lv>0?'賣出':'基準';
-    const pct = lv<0?bp:lv>0?sp:0;
-    const amt = pct>0 ? Math.floor(cap*pct/100/p)*1 : 0;
-    const cl  = lv<0?'pos':lv>0?'neg':'neu';
-    return `<tr><td class="${cl}">${act}</td><td>${p.toFixed(1)}</td><td>${pct?pct+'%':'—'}</td><td>${pct?fmt(cap*pct/100)+'元':'—'}</td></tr>`;
+  const base=+document.getElementById('g-p').value||100;
+  const dn=+document.getElementById('g-dn').value||3;
+  const up=+document.getElementById('g-up').value||3;
+  const bp=+document.getElementById('g-bp').value||5;
+  const sp=+document.getElementById('g-sp').value||5;
+  const cap=(+document.getElementById('g-cap').value||10)*10000;
+  const rows=[-3,-2,-1,0,1,2,3].map(lv=>{
+    const p=base*Math.pow(1+(lv>=0?up:-dn)/100,Math.abs(lv));
+    const act=lv<0?'買入':lv>0?'賣出':'基準';
+    const pct=lv<0?bp:lv>0?sp:0;
+    const cl=lv<0?'pos':lv>0?'neg':'neu';
+    return`<tr><td class="${cl}">${act}</td><td>${p.toFixed(1)}</td><td>${pct?pct+'%':'—'}</td><td>${pct?fmt(cap*pct/100)+'元':'—'}</td></tr>`;
   }).join('');
-  document.getElementById('res-grid').innerHTML =
-    `<div class="group" style="padding:4px 8px"><table><thead><tr><th>動作</th><th>價位</th><th>倉位%</th><th>投入金額</th></tr></thead><tbody>${rows}</tbody></table></div><p class="note">基準持倉 ${fmt(cap)} 元</p>`;
-  document.getElementById('res-grid').style.display = 'block';
+  document.getElementById('res-grid').innerHTML=`<div class="group" style="padding:4px 8px"><table><thead><tr><th>動作</th><th>價位</th><th>倉位%</th><th>投入金額</th></tr></thead><tbody>${rows}</tbody></table></div><p class="note">基準持倉 ${fmt(cap)} 元</p>`;
+  document.getElementById('res-grid').style.display='block';
 }
 
-// ─── Broker settings ───
+// ── broker modal ──
 function renderBrokerList(){
-  const el = document.getElementById('broker-list');
+  const el=document.getElementById('broker-list');
   if(!brokers.length){el.innerHTML='<div style="padding:14px 16px;font-size:14px;color:#8E8E93">尚無券商</div>';return}
-  el.innerHTML = brokers.map((b,i)=>{
-    let detail = b.mkt==='TW'
-      ? `台股 · 買${b.buyPct}%／賣${b.sellPct}%／稅${b.tax}%`
-      : b.type==='perShare' ? `美股 · 每股$${b.perShare}`
-      : b.type==='pct' ? `美股 · 買${b.buyPct}%／賣${b.sellPct}%`
-      : `美股 · 零手續費`;
-    return `<div class="broker-item">
-      <div><div class="broker-name">${b.name}</div><div class="broker-detail">${detail}</div></div>
-      <button class="broker-edit-btn" onclick="openBrokerModal(${i})">編輯</button>
-    </div>`;
+  el.innerHTML=brokers.map((b,i)=>{
+    const detail=b.mkt==='TW'?`台股 · 買${b.buyPct}%／賣${b.sellPct}%／稅${b.tax}%`
+      :b.type==='perShare'?`美股 · 每股$${b.perShare}，最低$${b.minFee}`
+      :b.type==='pct'?`美股 · 買${b.buyPct}%／賣${b.sellPct}%`
+      :'美股 · 零手續費';
+    return`<div class="bitem"><div><div class="bname">${b.name}</div><div class="bdetail">${detail}</div></div><button class="bedit" onclick="openModal(${i})">編輯</button></div>`;
   }).join('');
 }
-
-function openBrokerModal(idx){
-  editBrokerIdx = idx;
-  const isNew = idx===null;
-  document.getElementById('modal-title').textContent = isNew?'新增券商':'編輯券商';
-  document.getElementById('m-del-btn').style.display = isNew?'none':'block';
-  if(!isNew){
-    const b = brokers[idx];
-    document.getElementById('m-name').value = b.name;
-    document.getElementById('m-mkt').value = b.mkt;
-  } else {
-    document.getElementById('m-name').value = '';
-    document.getElementById('m-mkt').value = 'TW';
-  }
-  renderModalFeeFields(!isNew ? brokers[idx] : null);
-  document.getElementById('broker-modal').classList.add('open');
+function openModal(idx){
+  editIdx=idx;
+  const isNew=idx===null;
+  document.getElementById('modal-title').textContent=isNew?'新增券商':'編輯券商';
+  document.getElementById('m-del').style.display=isNew?'none':'block';
+  if(!isNew){const b=brokers[idx];document.getElementById('m-name').value=b.name;document.getElementById('m-mkt').value=b.mkt;}
+  else{document.getElementById('m-name').value='';document.getElementById('m-mkt').value='TW';}
+  renderModalFields(!isNew?brokers[idx]:null);
+  document.getElementById('bmodal').classList.add('open');
 }
-
-function renderModalFeeFields(existing){
-  const mkt = document.getElementById('m-mkt').value;
-  const el  = document.getElementById('modal-fee-fields');
+function renderModalFields(existing){
+  const mkt=document.getElementById('m-mkt').value;
+  const el=document.getElementById('m-fields');
   if(mkt==='TW'){
-    const bp = existing&&existing.mkt==='TW'?existing.buyPct:0.1425;
-    const sp = existing&&existing.mkt==='TW'?existing.sellPct:0.1425;
-    const tx = existing&&existing.mkt==='TW'?existing.tax:0.3;
-    const mf = existing&&existing.mkt==='TW'?existing.minFee:20;
-    el.innerHTML = `
+    const bp=existing?.mkt==='TW'?existing.buyPct:0.1425;
+    const sp=existing?.mkt==='TW'?existing.sellPct:0.1425;
+    const tx=existing?.mkt==='TW'?existing.tax:0.3;
+    const mf=existing?.mkt==='TW'?existing.minFee:20;
+    el.innerHTML=`
       <div class="mrow"><label>買進費率</label><input id="m-buy" type="number" value="${bp}" step="0.0001"><span class="u">%</span></div>
       <div class="mrow"><label>賣出費率</label><input id="m-sell" type="number" value="${sp}" step="0.0001"><span class="u">%</span></div>
       <div class="mrow"><label>證交稅</label><input id="m-tax" type="number" value="${tx}" step="0.01"><span class="u">%</span></div>
       <div class="mrow"><label>最低手續費</label><input id="m-min" type="number" value="${mf}"><span class="u">元</span></div>`;
-    document.getElementById('modal-note').textContent = '台股標準：買賣各0.1425%，最低20元，證交稅0.3%';
+    document.getElementById('m-note').textContent='台股標準：買賣各0.1425%，最低20元，證交稅0.3%';
   } else {
-    const type = existing&&existing.mkt==='US'?existing.type:'fixed';
-    const ps   = existing&&existing.mkt==='US'&&existing.perShare!=null?existing.perShare:0;
-    const mf   = existing&&existing.mkt==='US'?existing.minFee:0;
-    el.innerHTML = `
+    const type=existing?.mkt==='US'?existing.type:'fixed';
+    const ps=existing?.mkt==='US'&&existing.perShare!=null?existing.perShare:0;
+    const mf=existing?.mkt==='US'?existing.minFee:0;
+    el.innerHTML=`
       <div class="mrow"><label>類型</label>
         <select id="m-type" style="flex:1;font-size:14px;padding:8px;border:1px solid #D1D1D6;border-radius:9px;background:#F9F9F9;color:#1C1C1E;font-family:inherit">
           <option value="fixed" ${type==='fixed'?'selected':''}>零手續費</option>
@@ -727,56 +620,42 @@ function renderModalFeeFields(existing){
       </div>
       <div class="mrow"><label>每股費用</label><input id="m-ps" type="number" value="${ps}" step="0.001"><span class="u">USD</span></div>
       <div class="mrow"><label>最低費用</label><input id="m-min" type="number" value="${mf}" step="0.01"><span class="u">USD</span></div>`;
-    document.getElementById('modal-note').textContent = '零手續費：Firstrade等。每股費率：IB約$0.005/股';
+    document.getElementById('m-note').textContent='Firstrade/富途等零手續費選第一項；IB每股約$0.005';
   }
 }
-
 function saveBroker(){
-  const name = document.getElementById('m-name').value.trim();
+  const name=document.getElementById('m-name').value.trim();
   if(!name){alert('請填入券商名稱');return}
-  const mkt = document.getElementById('m-mkt').value;
-  let b = {id: editBrokerIdx!==null ? brokers[editBrokerIdx].id : 'b'+Date.now(), name, mkt};
-  if(mkt==='TW'){
-    b.type='pct';
-    b.buyPct  = +document.getElementById('m-buy').value||0.1425;
-    b.sellPct = +document.getElementById('m-sell').value||0.1425;
-    b.tax     = +document.getElementById('m-tax').value||0.3;
-    b.minFee  = +document.getElementById('m-min').value||20;
-  } else {
-    b.type    = document.getElementById('m-type').value;
-    b.perShare= +document.getElementById('m-ps').value||0;
-    b.minFee  = +document.getElementById('m-min').value||0;
-  }
-  if(editBrokerIdx!==null) brokers[editBrokerIdx]=b;
-  else brokers.push(b);
-  save(); renderBrokerList();
-  fillBrokerSelect('c-broker', curMkt);
-  fillBrokerSelect('p-broker', document.getElementById('p-mkt').value);
-  closeBrokerModal();
+  const mkt=document.getElementById('m-mkt').value;
+  let b={id:editIdx!==null?brokers[editIdx].id:'b'+Date.now(),name,mkt};
+  if(mkt==='TW'){b.buyPct=+document.getElementById('m-buy').value||0.1425;b.sellPct=+document.getElementById('m-sell').value||0.1425;b.tax=+document.getElementById('m-tax').value||0.3;b.minFee=+document.getElementById('m-min').value||20;}
+  else{b.type=document.getElementById('m-type').value;b.perShare=+document.getElementById('m-ps').value||0;b.minFee=+document.getElementById('m-min').value||0;}
+  if(editIdx!==null)brokers[editIdx]=b;else brokers.push(b);
+  save();renderBrokerList();
+  fillSel('c-broker',curMkt);
+  fillSel('p-broker',document.getElementById('p-mkt').value);
+  renderBrokerNote();
+  closeModal();
 }
-
 function deleteBroker(){
-  if(editBrokerIdx===null) return;
-  if(!confirm('確定刪除此券商？')) return;
-  brokers.splice(editBrokerIdx,1);
-  save(); renderBrokerList();
-  fillBrokerSelect('c-broker', curMkt);
-  closeBrokerModal();
+  if(editIdx===null)return;
+  if(!confirm('確定刪除？'))return;
+  brokers.splice(editIdx,1);save();renderBrokerList();
+  fillSel('c-broker',curMkt);closeModal();
+}
+function closeModal(e){
+  if(e&&e.target!==document.getElementById('bmodal'))return;
+  document.getElementById('bmodal').classList.remove('open');
 }
 
-function closeBrokerModal(e){
-  if(e && e.target!==document.getElementById('broker-modal')) return;
-  document.getElementById('broker-modal').classList.remove('open');
-}
-
-// ─── Helpers ───
+// ── helpers ──
 function fmt(n){return Math.round(n).toLocaleString('zh-TW')}
 function fmtD(n){return(n>=0?'+':'')+fmt(n)}
 function fmtP(n){return(n>=0?'+':'')+n.toFixed(2)+'%'}
 
-// ─── Init ───
-fillBrokerSelect('c-broker','TW');
-fillBrokerSelect('p-broker','TW');
+// ── init ──
+fillSel('c-broker','TW');
+fillSel('p-broker','TW');
 renderBrokerNote();
 renderPort();
 </script>
