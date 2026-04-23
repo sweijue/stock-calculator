@@ -305,9 +305,17 @@ tr:last-child td{border-bottom:none}
 <script>
 // ── storage ──
 const DEF_BROKERS=[
-  {id:'b1',name:'台股標準',mkt:'TW',buyPct:0.1425,sellPct:0.1425,tax:0.3,minFee:20},
-  {id:'b2',name:'美股零手續費',mkt:'US',type:'fixed',perShare:0,minFee:0},
-  {id:'b3',name:'美股 IB/每股',mkt:'US',type:'perShare',perShare:0.005,minFee:0.99},
+  // 台股
+  {id:'b_yd_tw',   name:'元大 台股 整股',    mkt:'TW', buyPct:0.0855, sellPct:0.0855, tax:0.3, minFee:20},
+  {id:'b_yd_tw_z', name:'元大 台股 零股',    mkt:'TW', buyPct:0.0855, sellPct:0.0855, tax:0.3, minFee:1},
+  {id:'b_yf_tw', name:'永豐大戶投 台股',    mkt:'TW', buyPct:0.0285, sellPct:0.0285, tax:0.3, minFee:1},
+  {id:'b_fb_tw', name:'富邦 台股 App',       mkt:'TW', buyPct:0.02565,sellPct:0.02565,tax:0.3, minFee:1},
+  {id:'b_ct_tw', name:'國泰 台股 App',       mkt:'TW', buyPct:0.03990,sellPct:0.03990,tax:0.3, minFee:1},
+  // 美股（複委託）
+  {id:'b_yd_us', name:'元大 美股複委託',     mkt:'US', type:'pct', buyPct:0.1, sellPct:0.1, minFee:1},
+  {id:'b_yf_us', name:'永豐大戶投 美股',     mkt:'US', type:'pct', buyPct:0.08,sellPct:0.08,minFee:0},
+  {id:'b_fb_us', name:'富邦 美股複委託',     mkt:'US', type:'pct', buyPct:0.06,sellPct:0.06,minFee:0},
+  {id:'b_ct_us', name:'國泰 美股複委託',     mkt:'US', type:'pct', buyPct:0.1, sellPct:0.1, minFee:3},
 ];
 let brokers=JSON.parse(localStorage.getItem('brokers')||'null')||DEF_BROKERS;
 let stocks=JSON.parse(localStorage.getItem('twstk4')||'[]');
