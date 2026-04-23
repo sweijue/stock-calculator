@@ -933,6 +933,7 @@ function calcFees(b,mkt,cost,price,shares,rate){
 
 // ── 計算損益 ──
 function doPnl(){
+  try{
   const cost=+document.getElementById('c-cost').value;
   const price=+document.getElementById('c-price').value;
   const shares=+document.getElementById('c-shares').value||1;
@@ -972,21 +973,11 @@ function doPnl(){
   // 止損分析（-5%, -10%, -15%, -20%）
   const stopLevels = [5,10,15,20];
   const stopRows = stopLevels.map(pct=>{
-    const stopPrice = curMkt==='TW'
-      ? cost*(1-pct/100)
-      : cost*(1-pct/100);
+    const stopPrice = cost*(1-pct/100);
     const sr = calcFees(b, curMkt, cost, stopPrice, shares, rate);
-    const cl2 = 'neg';
     return `<div class="dr">
       <span class="lbl">止損 -${pct}%（${stopPrice.toFixed(curMkt==='US'?2:1)}）</span>
-      <span class="val ${cl2}">${sr.amtStr}</span>
-      </div>
-      <!-- 右側按鈕（左滑露出）：買賣價 -->
-      <div style="display:flex;flex-shrink:0">
-        <div onclick="jumpToGrid(${i})" style="width:100px;background:#FF9500;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:13px;font-weight:600;cursor:pointer">
-          <span style="font-size:20px">📊</span>買賣價
-        </div>
-      </div>
+      <span class="val neg">${sr.amtStr}</span>
     </div>`;
   }).join('');
   document.getElementById('r-stoploss').innerHTML = stopRows;
@@ -1022,6 +1013,7 @@ function doPnl(){
   }
 
   document.getElementById('res-pnl').style.display='block';
+  }catch(err){console.error('doPnl error:',err);alert('計算出錯：'+err.message);}
 }
 
 // ── 攤平 ──
