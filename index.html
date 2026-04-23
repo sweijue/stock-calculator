@@ -1024,69 +1024,130 @@ function doGrid(){
   const bId=document.getElementById('g-broker').value;
   const b=brokers.find(x=>x.id===bId);
 
-  // 價位一覽：3個買入點 + 基準 + 3個賣出點
-  const levels=[-3,-2,-1,0,1,2,3];
-  const priceRows = levels.map(lv=>{
-    const p = lv<0
-      ? base*Math.pow(1-dn/100, Math.abs(lv))
-      : lv>0 ? base*Math.pow(1+up/100, lv) : base;
-    const act = lv<0?'買入':lv>0?'賣出':'基準';
-    const cl  = lv<0?'pos':lv>0?'neg':'neu';
-    const chg = lv===0?'—':(lv<0?'':'+')+((Math.pow(lv<0?1-dn/100:1+up/100,Math.abs(lv))-1)*100).toFixed(1)+'%';
-    return `<tr>
-      <td class="${cl}" style="font-weight:600">${act}</td>
-      <td style="font-weight:700;text-align:right">${p.toFixed(1)} 元</td>
-      <td style="text-align:right;font-size:12px;color:#8E8E93">${chg}</td>
-    </tr>`;
+  function calcRow(costP, exitP){
+    let netAmt=(exitP-costP)*shares;
+    let netPct=(exitP-costP)/costP*100;
+    if(b&&b.mkt==='TW'){
+      const r=calcFees(b,'TW',costP,exitP,shares,1);
+      netAmt=r.net; netPct=r.net/(costP*shares)*100;
+    }
+    return {netAmt, netPct};
+  }
+
+  // 往上 3 格
+  const upRows = [1,2,3].map(n=>{
+    const sellP = base*Math.pow(1+up/100,n);
+    const chgPct = ((Math.pow(1+up/100,n)-1)*100).toFixed(1);
+    const {netAmt,netPct} = calcRow(base,sellP);
+    return {n, p:sellP, chgPct, netAmt, netPct};
+  });
+
+  // 往下 3 格
+  const dnRows = [1,2,3].map(n=>{
+    const stopP = base*Math.pow(1-dn/100,n);
+    const chgPct = ((Math.pow(1-dn/100,n)-1)*100).toFixed(1);
+    const recoverPct = ((base/stopP-1)*100).toFixed(1);
+    const {netAmt,netPct} = calcRow(base,stopP);
+    return {n, p:stopP, chgPct, netAmt, netPct, recoverPct};
+  });
+
+  // 風險報酬比（漲1格 vs 跌1格）
+  const rr = Math.abs(upRows[0].netPct/dnRows[0].netPct).toFixed(2);
+  const rrColor = parseFloat(rr)>=1?'#34C759':'#FF3B30';
+
+  // 對照表 HTML
+  const tableRows = [3,2,1].map(n=>{
+    const u=upRows[n-1], d=dnRows[n-1];
+    return `
+      <tr style="border-bottom:1px solid #F2F2F7">
+        <td style="padding:10px 12px;text-align:left">
+          <div style="font-size:12px;color:#8E8E93;margin-bottom:2px">跌 ${d.chgPct}%</div>
+          <div style="font-weight:600;color:#34C759">${d.p.toFixed(1)} 元</div>
+          <div style="font-size:11px;color:#FF3B30;margin-top:2px">回本需 +${d.recoverPct}%</div>
+        </td>
+        <td style="padding:10px 6px;text-align:center;vertical-align:middle">
+          <div class="neg" style="font-size:14px;font-weight:700">${d.netPct.toFixed(2)}%</div>
+          <div class="neg" style="font-size:12px">${fmt(d.netAmt)} 元</div>
+        </td>
+        <td style="padding:10px 6px;text-align:center;vertical-align:middle;border-left:2px solid #F2F2F7;border-right:2px solid #F2F2F7">
+          <div style="font-size:10px;color:#8E8E93">-${d.chgPct.replace('-','')}% / +${u.chgPct}%</div>
+        </td>
+        <td style="padding:10px 6px;text-align:center;vertical-align:middle">
+          <div class="pos" style="font-size:14px;font-weight:700">+${u.netPct.toFixed(2)}%</div>
+          <div class="pos" style="font-size:12px">+${fmt(u.netAmt)} 元</div>
+        </td>
+        <td style="padding:10px 12px;text-align:right">
+          <div style="font-size:12px;color:#8E8E93;margin-bottom:2px">漲 +${u.chgPct}%</div>
+          <div style="font-weight:600;color:#FF3B30">${u.p.toFixed(1)} 元</div>
+        </td>
+      </tr>`;
   }).join('');
 
-  // 買賣配對：用清楚的「買入 XXXX → 賣出 XXXX」格式
+  // 低買高賣配對
   let pairCards='';
   for(let b_n=1;b_n<=3;b_n++){
-    const buyP = base*Math.pow(1-dn/100, b_n);
+    const buyP=base*Math.pow(1-dn/100,b_n);
     for(let s_n=1;s_n<=3;s_n++){
-      const sellP = base*Math.pow(1+up/100, s_n);
-      let netAmt = (sellP-buyP)*shares;
-      let netPct = (sellP-buyP)/buyP*100;
-      if(b){
-        const r = calcFees(b,'TW',buyP,sellP,shares,1);
-        netAmt = r.net;
-        netPct = r.net/(buyP*shares)*100;
-      }
-      const cl = netAmt>=0?'pos':'neg';
-      const arrow = netAmt>=0?'↑':'↓';
-      pairCards+=`<div class="dr" style="flex-direction:column;align-items:stretch;padding:12px 16px;gap:4px">
+      const sellP=base*Math.pow(1+up/100,s_n);
+      const {netAmt,netPct}=calcRow(buyP,sellP);
+      const cl=netAmt>=0?'pos':'neg';
+      pairCards+=`<div class="dr" style="flex-direction:column;align-items:stretch;padding:11px 16px;gap:3px">
         <div style="display:flex;justify-content:space-between;align-items:center">
           <span style="font-size:13px;color:#6C6C70">
             買入 <strong style="color:#34C759">${buyP.toFixed(1)}</strong>
-            　→　
-            賣出 <strong style="color:#FF3B30">${sellP.toFixed(1)}</strong>
+            → 賣出 <strong style="color:#FF3B30">${sellP.toFixed(1)}</strong>
           </span>
-          <span class="${cl}" style="font-size:16px;font-weight:700">${netPct>=0?'+':''}${netPct.toFixed(2)}%</span>
+          <span class="${cl}" style="font-size:15px;font-weight:700">${netPct>=0?'+':''}${netPct.toFixed(2)}%</span>
         </div>
-        <div style="display:flex;justify-content:space-between;align-items:center">
+        <div style="display:flex;justify-content:space-between">
           <span style="font-size:11px;color:#8E8E93">${shares}股 · 含手續費</span>
-          <span class="${cl}" style="font-size:14px;font-weight:600">${netAmt>=0?'+':''}${fmt(netAmt)} 元</span>
+          <span class="${cl}" style="font-size:13px;font-weight:600">${netAmt>=0?'+':''}${fmt(netAmt)} 元</span>
         </div>
       </div>`;
     }
   }
 
   document.getElementById('res-grid').innerHTML=`
-    <div class="slabel">價位一覽</div>
-    <div class="group" style="padding:4px 8px">
-      <table style="width:100%;border-collapse:collapse;font-size:14px">
-        <thead><tr>
-          <th style="text-align:left;font-size:11px;color:#8E8E93;font-weight:400;padding:6px 8px;border-bottom:1px solid #F2F2F7">動作</th>
-          <th style="text-align:right;font-size:11px;color:#8E8E93;font-weight:400;padding:6px 8px;border-bottom:1px solid #F2F2F7">價位</th>
-          <th style="text-align:right;font-size:11px;color:#8E8E93;font-weight:400;padding:6px 8px;border-bottom:1px solid #F2F2F7">與基準差距</th>
-        </tr></thead>
-        <tbody>${priceRows}</tbody>
+    <div class="slabel">損益對照表${b?'（'+b.name+'）':''}</div>
+    <div class="group" style="overflow:hidden">
+      <table style="width:100%;border-collapse:collapse;font-size:13px">
+        <thead>
+          <tr style="border-bottom:1px solid #E5E5EA">
+            <th style="padding:8px 12px;text-align:left;font-size:11px;color:#FF3B30;font-weight:600;background:#FFF8F8">← 止損（跌）</th>
+            <th style="padding:8px 6px;text-align:center;font-size:11px;color:#8E8E93;font-weight:400">虧損</th>
+            <th style="padding:8px 6px;text-align:center;font-size:11px;color:#8E8E93;font-weight:400;border-left:2px solid #F2F2F7;border-right:2px solid #F2F2F7">幅度</th>
+            <th style="padding:8px 6px;text-align:center;font-size:11px;color:#8E8E93;font-weight:400">獲利</th>
+            <th style="padding:8px 12px;text-align:right;font-size:11px;color:#34C759;font-weight:600;background:#F0FFF4">獲利（漲）→</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td colspan="2" style="padding:8px 12px;background:#FFF8F8">
+              <div style="font-size:11px;color:#8E8E93">止損價</div>
+              <div style="font-weight:700;font-size:15px;color:#1C1C1E">${base.toFixed(1)} 元</div>
+              <div style="font-size:11px;color:#8E8E93">持有成本</div>
+            </td>
+            <td style="text-align:center;border-left:2px solid #F2F2F7;border-right:2px solid #F2F2F7;padding:8px 6px">
+              <div style="font-size:10px;color:#8E8E93">跌% / 漲%</div>
+              <div style="font-size:11px;color:#8E8E93">${shares}股</div>
+            </td>
+            <td colspan="2" style="padding:8px 12px;background:#F0FFF4">
+              <div style="font-size:11px;color:#8E8E93">目標賣價</div>
+              <div style="font-weight:700;font-size:15px;color:#1C1C1E">${base.toFixed(1)} 元</div>
+              <div style="font-size:11px;color:#8E8E93">持有成本</div>
+            </td>
+          </tr>
+          ${tableRows}
+        </tbody>
       </table>
     </div>
-    <div class="slabel">買賣損益${b?'（'+b.name+'）':''}</div>
+    <div style="background:#F9F9F9;border-radius:10px;padding:10px 14px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center">
+      <span style="font-size:13px;color:#6C6C70">風險報酬比（漲1格獲利 ÷ 跌1格虧損）</span>
+      <span style="font-size:16px;font-weight:700;color:${rrColor}">1 : ${rr}</span>
+    </div>
+    <div class="slabel">低買高賣損益</div>
     <div class="group">${pairCards}</div>
-    <p class="note">基準 ${base} 元 · ${shares} 股 · 每格跌 ${dn}% 買入／漲 ${up}% 賣出</p>`;
+    <p class="note">基準 ${base} 元 · ${shares} 股 · 每格跌 ${dn}% / 漲 ${up}%${b?' · '+b.name:''}</p>`;
   document.getElementById('res-grid').style.display='block';
 }
 
@@ -1121,7 +1182,7 @@ function renderAvgEntries(){
     return `<div style="padding:10px 16px;border-bottom:1px solid #F2F2F7">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
         <span style="font-size:12px;font-weight:700;color:${typeColor};background:${isBuy?'#ECFDF5':'#FFF2F2'};padding:2px 8px;border-radius:5px">${typeLabel}</span>
-        <span style="font-size:12px;color:#8E8E93;flex:1">第 ${i+1} 筆</span>
+        <span style="font-size:12px;color:#8E8E93;flex:1"></span>
         <button onclick="removeAvgEntry(${i})" style="font-size:12px;color:#FF3B30;background:none;border:none;cursor:pointer;padding:2px 8px;font-family:inherit">刪除</button>
       </div>
       <div style="display:flex;gap:8px;align-items:center">
