@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+
 <html lang="zh-TW">
 <head>
 <meta charset="UTF-8">
@@ -114,6 +115,7 @@ tr:last-child td{border-bottom:none}
 </div>
 
 <!-- 計算機 -->
+
 <div id="p-calc" class="page on">
   <div style="background:#F0FFF4;border-radius:12px;padding:12px 16px;margin-bottom:14px;border:1px solid #BBF7D0">
     <div style="font-size:13px;color:#15803D;line-height:1.7">
@@ -139,7 +141,6 @@ tr:last-child td{border-bottom:none}
       <label>現價</label>
       <input id="c-price" type="number" placeholder="現在的股票價格" inputmode="decimal">
       <span class="u" id="c-pu">元</span>
-      <button onclick="fetchCalcPrice()" style="flex-shrink:0;font-size:12px;color:#007AFF;background:none;border:1px solid #007AFF;border-radius:7px;padding:4px 8px;cursor:pointer;font-family:inherit;white-space:nowrap">抓取</button>
     </div>
     <div class="row">
       <label>持有股數</label>
@@ -187,13 +188,21 @@ tr:last-child td{border-bottom:none}
 </div>
 
 <!-- 持股 -->
+
 <div id="p-port" class="page" style="position:relative;min-height:400px">
   <div id="ps-box" class="psbox" style="display:none">
-    <div class="slabel" style="margin:0 0 8px">組合概覽（台幣）</div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+      <div class="slabel" style="margin:0">組合概覽（台幣）</div>
+      <button onclick="refreshAllPrices()" id="refresh-btn"
+        style="font-size:12px;color:#007AFF;background:none;border:1px solid #007AFF;border-radius:7px;padding:4px 10px;cursor:pointer;font-family:inherit">
+        更新現價
+      </button>
+    </div>
     <div class="psr"><span class="lbl">總成本</span><span class="val" id="ps-c">—</span></div>
     <div class="psr"><span class="lbl">目前市值</span><span class="val" id="ps-v">—</span></div>
     <div class="divline"></div>
     <div class="psr"><span class="lbl">帳面損益（未賣出）</span><span class="val" id="ps-p">—</span></div>
+    <div id="refresh-status" style="font-size:11px;color:#8E8E93;margin-top:4px;display:none"></div>
   </div>
   <div id="slist"></div>
   <div style="height:80px"></div>
@@ -201,6 +210,7 @@ tr:last-child td{border-bottom:none}
 </div>
 
 <!-- 買賣價 -->
+
 <div id="p-grid" class="page">
   <div style="background:#EFF6FF;border-radius:12px;padding:12px 16px;margin-bottom:14px;border:1px solid #BFDBFE">
     <div style="font-size:13px;color:#1D4ED8;line-height:1.7">
@@ -248,6 +258,7 @@ tr:last-child td{border-bottom:none}
 </div>
 
 <!-- 設定 -->
+
 <div id="p-set" class="page">
   <div class="slabel">台股報價 API（Fugle）</div>
   <div class="api-box">
@@ -305,6 +316,7 @@ tr:last-child td{border-bottom:none}
 </div>
 
 <!-- 交易 Modal -->
+
 <div class="overlay" id="txn-modal" onclick="closeTxnModal(event)">
   <div class="modal" onclick="event.stopPropagation()">
     <h3 id="tm-title">買入</h3>
@@ -318,51 +330,55 @@ tr:last-child td{border-bottom:none}
 </div>
 
 <!-- 新增交易 Modal -->
+
 <div class="overlay" id="add-stock-modal" onclick="closeAddStock(event)">
   <div class="modal" onclick="event.stopPropagation()">
     <h3 id="add-modal-title">新增交易</h3>
 
-    <div class="mrow">
-      <label>市場</label>
-      <select id="p-mkt" onchange="onPortMktChange()" style="flex:1;font-size:14px;padding:8px;border:1px solid #D1D1D6;border-radius:9px;background:#F9F9F9;color:#1C1C1E;font-family:inherit">
-        <option value="TW">台股</option>
-        <option value="US">美股</option>
-      </select>
-    </div>
-    <div class="mrow"><label>股票代碼</label>
-      <div class="sw" style="flex:1">
-        <input id="p-code" type="text" placeholder="輸入代碼" autocomplete="off"
-          oninput="onAddInput()" onblur="hidePortHintDelay()"
-          style="width:100%;font-size:15px;padding:8px 12px;border:1px solid #D1D1D6;border-radius:9px;background:#F9F9F9;color:#1C1C1E;font-family:inherit">
-        <div id="p-hint" class="sdrop" style="display:none"></div>
-      </div>
-    </div>
-    <div class="mrow"><label>股票名稱</label><input id="p-name" type="text" placeholder="自動帶入或手動填"></div>
-    <div class="mrow" id="p-rate-row" style="display:none"><label>匯率</label><input id="p-rate" type="number" inputmode="decimal" placeholder="32" value="32"><span class="u">元</span></div>
-    <div class="mrow"><label>券商</label>
-      <select id="p-broker" style="flex:1;font-size:14px;padding:8px;border:1px solid #D1D1D6;border-radius:9px;background:#F9F9F9;color:#1C1C1E;font-family:inherit"></select>
-    </div>
+```
+<div class="mrow">
+  <label>市場</label>
+  <select id="p-mkt" onchange="onPortMktChange()" style="flex:1;font-size:14px;padding:8px;border:1px solid #D1D1D6;border-radius:9px;background:#F9F9F9;color:#1C1C1E;font-family:inherit">
+    <option value="TW">台股</option>
+    <option value="US">美股</option>
+  </select>
+</div>
+<div class="mrow"><label>股票代碼</label>
+  <div class="sw" style="flex:1">
+    <input id="p-code" type="text" placeholder="輸入代碼" autocomplete="off"
+      oninput="onAddInput()" onblur="hidePortHintDelay()"
+      style="width:100%;font-size:15px;padding:8px 12px;border:1px solid #D1D1D6;border-radius:9px;background:#F9F9F9;color:#1C1C1E;font-family:inherit">
+    <div id="p-hint" class="sdrop" style="display:none"></div>
+  </div>
+</div>
+<div class="mrow"><label>股票名稱</label><input id="p-name" type="text" placeholder="自動帶入或手動填"></div>
+<div class="mrow" id="p-rate-row" style="display:none"><label>匯率</label><input id="p-rate" type="number" inputmode="decimal" placeholder="32" value="32"><span class="u">元</span></div>
+<div class="mrow"><label>券商</label>
+  <select id="p-broker" style="flex:1;font-size:14px;padding:8px;border:1px solid #D1D1D6;border-radius:9px;background:#F9F9F9;color:#1C1C1E;font-family:inherit"></select>
+</div>
 
-    <div style="height:1px;background:#F2F2F7;margin:12px 0"></div>
+<div style="height:1px;background:#F2F2F7;margin:12px 0"></div>
 
-    <div style="display:flex;gap:8px;margin-bottom:12px">
-      <button id="add-type-buy" onclick="setAddType('buy')"
-        style="flex:1;padding:10px;border-radius:9px;border:2px solid #34C759;background:#ECFDF5;color:#15803D;font-weight:700;font-size:14px;cursor:pointer;font-family:inherit">
-        買入
-      </button>
-      <button id="add-type-sell" onclick="setAddType('sell')"
-        style="flex:1;padding:10px;border-radius:9px;border:1px solid #D1D1D6;background:#F9F9F9;color:#6C6C70;font-weight:500;font-size:14px;cursor:pointer;font-family:inherit">
-        賣出
-      </button>
-    </div>
+<div style="display:flex;gap:8px;margin-bottom:12px">
+  <button id="add-type-buy" onclick="setAddType('buy')"
+    style="flex:1;padding:10px;border-radius:9px;border:2px solid #34C759;background:#ECFDF5;color:#15803D;font-weight:700;font-size:14px;cursor:pointer;font-family:inherit">
+    買入
+  </button>
+  <button id="add-type-sell" onclick="setAddType('sell')"
+    style="flex:1;padding:10px;border-radius:9px;border:1px solid #D1D1D6;background:#F9F9F9;color:#6C6C70;font-weight:500;font-size:14px;cursor:pointer;font-family:inherit">
+    賣出
+  </button>
+</div>
 
-    <div class="mrow"><label>日期</label><input id="add-date" type="date"></div>
-    <div class="mrow"><label>價格</label><input id="add-price" type="number" inputmode="decimal" placeholder="950"><span class="u" id="add-price-u">元</span></div>
-    <div class="mrow"><label>股數</label><input id="add-shares" type="number" inputmode="numeric" placeholder="100"></div>
-    <div class="mrow"><label>備註</label><input id="add-note" type="text" placeholder="選填"></div>
+<div class="mrow"><label>日期</label><input id="add-date" type="date"></div>
+<div class="mrow"><label>價格</label><input id="add-price" type="number" inputmode="decimal" placeholder="950"><span class="u" id="add-price-u">元</span></div>
+<div class="mrow"><label>股數</label><input id="add-shares" type="number" inputmode="numeric" placeholder="100"></div>
+<div class="mrow"><label>備註</label><input id="add-note" type="text" placeholder="選填"></div>
 
-    <button class="btn green sm" onclick="addStockAndTxn()">儲存</button>
-    <button class="btn ghost sm" style="margin-bottom:0" onclick="closeAddStock()">取消</button>
+<button class="btn green sm" onclick="addStockAndTxn()">儲存</button>
+<button class="btn ghost sm" style="margin-bottom:0" onclick="closeAddStock()">取消</button>
+```
+
   </div>
 </div>
 <!-- Modal -->
@@ -520,9 +536,47 @@ function sw(id,el){
   if(id==='set'){renderBrokerList();updateApiBox();}
   const fab=document.getElementById('fab');
   if(fab) fab.style.display=id==='port'?'flex':'none';
+
 }
 
 // ── market ──
+async function refreshAllPrices(){
+  if(!fugleKey && !apiKey) return;
+  const btn = document.getElementById('refresh-btn');
+  const status = document.getElementById('refresh-status');
+  if(btn){ btn.textContent='更新中…'; btn.disabled=true; }
+  if(status){ status.style.display='block'; status.textContent='正在抓取現價…'; }
+
+  let updated=0, failed=0;
+  // 依序抓（避免超過 API 速率限制）
+  for(let i=0; i<stocks.length; i++){
+    const s=stocks[i];
+    const heldShares=stockHeldShares(s);
+    if(heldShares<=0) continue; // 已清倉不需更新
+    try{
+      const p = await fetchPrice(s.code, s.mkt);
+      if(p && p>0){
+        stocks[i].price=p;
+        updated++;
+      } else {
+        failed++;
+      }
+    } catch(e){
+      failed++;
+    }
+    // 每次請求間隔 300ms，避免 API 限速
+    if(i<stocks.length-1) await new Promise(r=>setTimeout(r,300));
+  }
+
+  save();
+  renderPort();
+  if(btn){ btn.textContent='更新現價'; btn.disabled=false; }
+  if(status){
+    const now=new Date().toLocaleTimeString('zh-TW',{hour:'2-digit',minute:'2-digit'});
+    status.textContent=`更新 ${updated} 筆 ${failed?'（'+failed+' 筆失敗）':''} · ${now}`;
+  }
+}
+
 async function fetchCalcPrice(){
   const code = document.getElementById('c-code')&&document.getElementById('c-code').value
     ? document.getElementById('c-code').value.trim() : '';
@@ -1016,7 +1070,24 @@ function renderPort(){
   document.getElementById('ps-box').style.display='block';
 }
 
-function togDet(i){document.getElementById('d'+i).classList.toggle('open')}
+function togDet(i){
+  const el=document.getElementById('d'+i);
+  el.classList.toggle('open');
+  // 展開時自動抓現價
+  if(el.classList.contains('open')){
+    const s=stocks[i];
+    if(!s) return;
+    const held=stockHeldShares(s);
+    if(held<=0) return;
+    fetchPrice(s.code,s.mkt).then(p=>{
+      if(p&&p>0&&p!==s.price){
+        stocks[i].price=p;
+        save();
+        renderPort();
+      }
+    }).catch(()=>{});
+  }
+}
 function delS(e,i){e.stopPropagation();if(!confirm('確定刪除此持股及所有交易紀錄？'))return;stocks.splice(i,1);save();renderPort();}
 function updatePrice(i,v){const p=parseFloat(v);if(!isNaN(p)&&p>0){stocks[i].price=p;save();renderPort();}}
 function delTxn(e,si,ti){e.stopPropagation();if(!confirm('刪除此筆交易？'))return;stocks[si].txns.splice(ti,1);save();renderPort();}
@@ -1785,5 +1856,6 @@ renderBrokerNote();renderPort();updateApiBox();
 // 把現有持股名稱補進快取
 stocks.forEach(s=>{ if(s.code && s.name) saveNameCache(s.code, s.name); });
 </script>
+
 </body>
 </html>
