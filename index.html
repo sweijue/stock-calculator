@@ -121,9 +121,9 @@ tr:last-child td{border-bottom:none}
     </div>
   </div>
   <div id="apibox-calc" class="api-box" style="display:none">
-    ⚠️ 尚未設定 Finnhub API Key，無法自動查詢股票與現價。<br>
-    請到「設定」→「API Key」填入。<br>
-    <a href="https://finnhub.io/register" target="_blank">點此免費申請 Finnhub Key</a>（30秒完成）
+    ⚠️ 尚未設定 API Key，無法自動抓取現價。<br>
+    台股請設定 <strong>Fugle Key</strong>，美股請設定 <strong>Finnhub Key</strong>。<br>
+    請到「設定」頁面填入。
   </div>
   <div class="mkt-toggle">
     <button class="mkt-btn on" id="mkt-tw" onclick="setMkt('TW')">🇹🇼 台股</button>
@@ -249,20 +249,36 @@ tr:last-child td{border-bottom:none}
 
 <!-- 設定 -->
 <div id="p-set" class="page">
-  <div class="slabel">Finnhub API Key</div>
+  <div class="slabel">台股報價 API（Fugle）</div>
   <div class="api-box">
-    用於自動查詢股票名稱與現價（台股＋美股）。<br>
-    1. <a href="https://finnhub.io/register" target="_blank">finnhub.io</a> 免費註冊<br>
-    2. 登入後首頁即可看到你的 API Key<br>
-    3. 貼到下方儲存即可
+    用於查詢<strong>台股</strong>現價，台股覆蓋率高、資料即時。<br>
+    1. 前往 <a href="https://developer.fugle.tw" target="_blank">developer.fugle.tw</a> 免費註冊<br>
+    2. 建立 API Key → 選「行情」→ 複製 Key<br>
+    3. 貼到下方儲存
   </div>
   <div class="group">
     <div class="row">
-      <label>API Key</label>
-      <input id="set-apikey" class="si" type="text" placeholder="貼上你的 Key" style="text-align:left;font-size:13px">
+      <label>Fugle Key</label>
+      <input id="set-fugle-key" class="si" type="text" placeholder="貼上 Fugle API Key" style="text-align:left;font-size:13px">
     </div>
   </div>
-  <button class="btn green sm" onclick="saveApiKey()">儲存 API Key</button>
+  <button class="btn green sm" onclick="saveFugleKey()">儲存 Fugle Key</button>
+  <div id="fugle-status" style="font-size:13px;color:#8E8E93;margin:-6px 4px 16px"></div>
+
+  <div class="slabel">美股報價 API（Finnhub）</div>
+  <div class="api-box">
+    用於查詢<strong>美股</strong>現價與股票搜尋。<br>
+    1. 前往 <a href="https://finnhub.io/register" target="_blank">finnhub.io</a> 免費註冊<br>
+    2. 登入後首頁即可看到 API Key<br>
+    3. 貼到下方儲存
+  </div>
+  <div class="group">
+    <div class="row">
+      <label>Finnhub Key</label>
+      <input id="set-apikey" class="si" type="text" placeholder="貼上 Finnhub API Key" style="text-align:left;font-size:13px">
+    </div>
+  </div>
+  <button class="btn green sm" onclick="saveApiKey()">儲存 Finnhub Key</button>
   <div id="apikey-status" style="font-size:13px;color:#8E8E93;margin:-6px 4px 16px"></div>
 
   <div class="slabel">資料備份</div>
@@ -459,6 +475,7 @@ let stocks=(()=>{
   }));
 })();
 let apiKey=localStorage.getItem('finnhub_key')||'';
+let fugleKey=localStorage.getItem('fugle_key')||'';
 let curMkt='TW';
 let editIdx=null;
 let hintTimer=null;
@@ -471,17 +488,27 @@ function save(){
 // ── API Key ──
 function saveApiKey(){
   const k=document.getElementById('set-apikey').value.trim();
-  if(!k){alert('請填入 API Key');return}
+  if(!k){alert('請填入 Finnhub API Key');return}
   apiKey=k;
   localStorage.setItem('finnhub_key',k);
   document.getElementById('apikey-status').textContent='✓ 已儲存';
   document.getElementById('apikey-status').style.color='#34C759';
   updateApiBox();
 }
+function saveFugleKey(){
+  const k=document.getElementById('set-fugle-key').value.trim();
+  if(!k){alert('請填入 Fugle API Key');return}
+  fugleKey=k;
+  localStorage.setItem('fugle_key',k);
+  document.getElementById('fugle-status').textContent='✓ 已儲存';
+  document.getElementById('fugle-status').style.color='#34C759';
+  updateApiBox();
+}
 function updateApiBox(){
-  const show=!apiKey;
+  const show=!apiKey&&!fugleKey;
   document.getElementById('apibox-calc').style.display=show?'':'none';
   if(apiKey) document.getElementById('set-apikey').value=apiKey;
+  if(fugleKey) document.getElementById('set-fugle-key').value=fugleKey;
 }
 
 // ── tabs ──
@@ -499,7 +526,7 @@ function sw(id,el){
 async function fetchCalcPrice(){
   const code = document.getElementById('c-code')&&document.getElementById('c-code').value
     ? document.getElementById('c-code').value.trim() : '';
-  if(!apiKey){alert('請先在「設定」填入 Finnhub API Key');return;}
+  if(!fugleKey&&!apiKey){alert('請先在「設定」填入 Fugle 或 Finnhub API Key');return;}
   const priceEl = document.getElementById('c-price');
   priceEl.placeholder='抓取中…';
   priceEl.value='';
@@ -507,7 +534,7 @@ async function fetchCalcPrice(){
     // 嘗試從名稱欄反推代碼
     let sym = curMkt==='TW'?(code?code+'.TW':''):code;
     if(!sym){alert('請先填入股票代碼');priceEl.placeholder='現在的股票價格';return;}
-    const p = await fhPrice(sym);
+    const p = await fetchPrice(code.replace('.TW',''), curMkt);
     if(p&&p>0){
       priceEl.value=p;
       priceEl.placeholder='';
@@ -561,17 +588,38 @@ function renderBrokerNote(){
   el.innerHTML=`<span style="color:#8E8E93">套用費率：</span>${detail}`;
 }
 
-// ── Finnhub API ──
-function fhSymbol(code, mkt){
-  if(mkt==='TW') return /^\d/.test(code) ? code+'.TW' : code;
-  return code.toUpperCase();
-}
-
+// ── 共用 fetch ──
 function fetchWithTimeout(url, ms){
   return new Promise((resolve, reject)=>{
     const timer = setTimeout(()=>reject(new Error('請求逾時')), ms);
     fetch(url).then(r=>{clearTimeout(timer);resolve(r)}).catch(e=>{clearTimeout(timer);reject(e)});
   });
+}
+
+// ── Fugle API（台股）──
+async function fuglePrice(code){
+  if(!fugleKey) return null;
+  // Fugle 行情 REST API
+  const url=`https://api.fugle.tw/marketdata/v1.0/stock/intraday/quote/${encodeURIComponent(code)}`;
+  const res=await fetchWithTimeout(url+'?apiKey='+fugleKey, 7000);
+  if(!res.ok) return null;
+  const data=await res.json();
+  return data.closePrice || data.lastPrice || data.previousClose || null;
+}
+
+async function fugleSearch(q){
+  if(!fugleKey) return [];
+  // 先查本地對照表
+  const matches = Object.entries(TW_NAMES).filter(([code,name])=>
+    code.startsWith(q) || name.includes(q)
+  ).slice(0,6);
+  return matches.map(([code,name])=>({symbol:code, description:name}));
+}
+
+// ── Finnhub API（美股）──
+function fhSymbol(code, mkt){
+  if(mkt==='TW') return /^\d/.test(code) ? code+'.TW' : code;
+  return code.toUpperCase();
 }
 
 async function fhSearch(q, mkt){
@@ -592,6 +640,23 @@ async function fhPrice(symbol){
   const res=await fetchWithTimeout(url, 7000);
   const data=await res.json();
   return data.c || data.pc || null;
+}
+
+// ── 統一查詢現價（自動依市場選用 API）──
+async function fetchPrice(code, mkt){
+  if(mkt==='TW'){
+    // 台股：優先用 Fugle，沒有 Key 就用 Finnhub
+    if(fugleKey){
+      const p = await fuglePrice(code);
+      if(p&&p>0) return p;
+    }
+    if(apiKey) return await fhPrice(code+'.TW');
+    return null;
+  } else {
+    // 美股：用 Finnhub
+    if(!apiKey) return null;
+    return await fhPrice(code.toUpperCase());
+  }
 }
 
 // ── search UI ──
@@ -622,10 +687,11 @@ function onInput(prefix){
     h.style.display='block';
   }
 
-  if(!apiKey){
+  const hasKey = mkt==='TW' ? (fugleKey||apiKey) : apiKey;
+  if(!hasKey){
     if(!allLocal.length){
       const h=document.getElementById(prefix+'-hint');
-      h.innerHTML='<div class="hl">請先在「設定」填入 Finnhub API Key</div>';
+      h.innerHTML=`<div class="hl">請先在「設定」填入 ${mkt==='TW'?'Fugle':'Finnhub'} API Key</div>`;
       h.style.display='block';
     }
     return;
@@ -645,7 +711,7 @@ async function pickLocalStock(prefix,code,name,mkt){
     if(priceEl){
       priceEl.placeholder='抓取中…';
       try{
-        const p=await fhPrice(sym);
+        const p=await fetchPrice(code, mkt);
         if(p&&p>0){priceEl.value=p;priceEl.placeholder='';priceEl.style.borderColor='#34C759';setTimeout(()=>priceEl.style.borderColor='',1800);}
         else priceEl.placeholder='請手動輸入';
       }catch(e){priceEl.placeholder='請手動輸入';}
@@ -702,9 +768,10 @@ async function pickStock(prefix,sym,nm,disp){
   document.getElementById(prefix+'-hint').style.display='none';
   // 自動抓現價
   const priceEl=document.getElementById(prefix+'-price');
+  const mktForPrice = prefix==='c'?curMkt:(document.getElementById('p-mkt')?document.getElementById('p-mkt').value:'TW');
   priceEl.placeholder='抓取中…';
   try{
-    const p=await fhPrice(sym);
+    const p=await fetchPrice(code, mktForPrice);
     if(p&&p>0){
       priceEl.value=p;
       priceEl.placeholder='';
@@ -1713,7 +1780,7 @@ function fmtD(n){return(n>=0?'+':'')+fmt(n)}
 function fmtP(n){return(n>=0?'+':'')+n.toFixed(2)+'%'}
 
 // ── init ──
-fillSel('c-broker','TW');fillSel('p-broker','TW');fillSel('g-broker','TW');renderTags('dn');renderTags('up');
+fillSel('c-broker','TW');fillSel('p-broker','TW');fillSel('g-broker','TW');renderTags('dn');renderTags('up');fugleKey=localStorage.getItem('fugle_key')||'';
 renderBrokerNote();renderPort();updateApiBox();
 // 把現有持股名稱補進快取
 stocks.forEach(s=>{ if(s.code && s.name) saveNameCache(s.code, s.name); });
